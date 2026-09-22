@@ -752,16 +752,48 @@ export class GameRenderer {
     ctx.fill();
     ctx.stroke();
 
-    // Front/action flipper.
-    const throwLift = state === 'attacking' ? Math.min(1, Math.max(0.25, attackProgress)) : 0;
+    // Front/action flipper. The attacking flipper now travels through a full
+    // anticipation -> overhead -> release sweep instead of staying in one pose.
+    const attackT = state === 'attacking' ? Math.max(0, Math.min(1, attackProgress)) : 0;
+    const packPulse = state === 'reloading' ? Math.sin(reloadProgress * Math.PI * 6) : 0;
     ctx.fillStyle = visual.bodyBottom;
     ctx.strokeStyle = outline;
     ctx.lineWidth = Math.max(2.4, s * 0.09);
     ctx.beginPath();
     if (state === 'attacking') {
-      ctx.ellipse(-s * 0.28, -s * (0.12 + 0.14 * throwLift), s * 0.25, s * 0.115, -0.85, 0, Math.PI * 2);
+      if (attackT < 0.58) {
+        const windup = attackT / 0.58;
+        ctx.ellipse(
+          -s * (0.24 + windup * 0.1),
+          -s * (0.1 + windup * 0.24),
+          s * 0.26,
+          s * 0.115,
+          -0.58 - windup * 0.5,
+          0,
+          Math.PI * 2
+        );
+      } else {
+        const release = (attackT - 0.58) / 0.42;
+        ctx.ellipse(
+          -s * 0.05 + s * 0.36 * release,
+          -s * 0.34 + s * 0.27 * release,
+          s * 0.27,
+          s * 0.11,
+          -1.05 + release * 1.38,
+          0,
+          Math.PI * 2
+        );
+      }
     } else if (state === 'reloading') {
-      ctx.ellipse(s * 0.22, s * 0.18, s * 0.21, s * 0.11, 0.48, 0, Math.PI * 2);
+      ctx.ellipse(
+        s * 0.24,
+        s * (0.17 + packPulse * 0.015),
+        s * 0.22,
+        s * 0.105,
+        0.46 - packPulse * 0.12,
+        0,
+        Math.PI * 2
+      );
     } else if (id === 'Speed') {
       ctx.ellipse(s * 0.34, s * 0.02, s * 0.28, s * 0.1, -0.18, 0, Math.PI * 2);
     } else if (id === 'King') {
@@ -772,12 +804,40 @@ export class GameRenderer {
     ctx.fill();
     ctx.stroke();
 
-    // Snowball while packing / throwing, with a pale-blue underside for volume.
+    // Snowball while packing / throwing. Reloading visibly "kneads" the ball;
+    // attacking carries it from behind the head to the forward release point.
     if (state === 'reloading' || state === 'attacking') {
-      const ballR = Math.max(4, config.ballRadius * (state === 'reloading' ? Math.max(0.45, reloadProgress) : 1));
-      const bx = state === 'attacking' ? -s * 0.35 : s * 0.34;
-      const by = state === 'attacking' ? -s * 0.34 : s * 0.17;
-      const snowGradient = ctx.createRadialGradient(bx - ballR * 0.3, by - ballR * 0.35, 1, bx, by, ballR);
+      let ballR = Math.max(4, config.ballRadius);
+      let bx = s * 0.34;
+      let by = s * 0.17;
+
+      if (state === 'reloading') {
+        ballR *= Math.max(0.42, reloadProgress);
+        bx += packPulse * s * 0.018;
+        by += Math.abs(packPulse) * s * 0.012;
+      } else if (attackT < 0.58) {
+        const windup = attackT / 0.58;
+        bx = -s * (0.31 + windup * 0.08);
+        by = -s * (0.25 + windup * 0.16);
+      } else {
+        const release = (attackT - 0.58) / 0.42;
+        const releasePower = id === 'King' ? 1.18 : id === 'Tank' ? 1.08 : 1;
+        bx = -s * 0.39 + s * 0.77 * release * releasePower;
+        by = -s * 0.41 - Math.sin(release * Math.PI) * s * 0.14;
+      }
+
+      if (id === 'King' && state === 'attacking') {
+        ballR *= 1.08;
+      }
+
+      const snowGradient = ctx.createRadialGradient(
+        bx - ballR * 0.3,
+        by - ballR * 0.35,
+        1,
+        bx,
+        by,
+        ballR
+      );
       snowGradient.addColorStop(0, '#FFFFFF');
       snowGradient.addColorStop(0.72, '#F8FDFF');
       snowGradient.addColorStop(1, '#CFEAF4');
@@ -788,6 +848,22 @@ export class GameRenderer {
       ctx.arc(bx, by, ballR, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
+
+      if (state === 'reloading') {
+        // Tiny snow crumbs sell the "kneading snow" action without extra sprites.
+        ctx.fillStyle = '#FFFFFF';
+        ctx.strokeStyle = '#B9DCE8';
+        ctx.lineWidth = Math.max(1, s * 0.03);
+        for (let i = 0; i < 3; i++) {
+          const crumbPhase = reloadProgress * Math.PI * 5 + i * 2.1;
+          const cx = bx + Math.cos(crumbPhase) * (ballR + 4 + i);
+          const cy = by + Math.sin(crumbPhase) * (ballR * 0.7 + 3);
+          ctx.beginPath();
+          ctx.arc(cx, cy, Math.max(1.2, s * 0.035), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+      }
     }
   }
 
