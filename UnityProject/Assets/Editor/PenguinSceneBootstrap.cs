@@ -93,9 +93,9 @@ namespace PenguinSnowball.EditorTools
             safe.gameObject.AddComponent<ResponsiveSafeArea>();
 
             // Large empty space is intentional: this is a game title screen, not an app dashboard.
-            var title = CreateText("Title", safe, "펭귄 눈싸움", 92, TextAnchor.MiddleCenter, Ink);
-            SetAnchors(title.rectTransform, new Vector2(.25f, .79f), new Vector2(.75f, .95f));
-            title.fontStyle = FontStyle.Bold;
+            var title = CreateUiImage("Title", safe, LoadSprite("title_ko.png"));
+            SetAnchors(title.rectTransform, new Vector2(.30f, .80f), new Vector2(.70f, .95f));
+            title.preserveAspect = true;
 
             var subtitle = CreateText("Subtitle", safe, "Penguin YUKIGASSEN", 36, TextAnchor.MiddleCenter, Ink);
             SetAnchors(subtitle.rectTransform, new Vector2(.31f, .72f), new Vector2(.69f, .80f));
