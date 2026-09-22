@@ -536,6 +536,24 @@ export class GameEngine {
     };
 
     this.snowballs.push(ball);
+
+    // Small launch burst makes the release readable even on a phone-sized battlefield.
+    const launchY = this.fieldHeight * 0.5 + handY;
+    const launchCount = unit.id === 'King' ? 10 : unit.id === 'Tank' ? 7 : 4;
+    const backDir = unit.isFacingRight ? -1 : 1;
+    for (let i = 0; i < launchCount; i++) {
+      this.particles.push({
+        x: handX + backDir * (Math.random() * 5),
+        y: launchY + (Math.random() * 8 - 4),
+        vx: backDir * (25 + Math.random() * (unit.id === 'King' ? 80 : 45)),
+        vy: -12 - Math.random() * (unit.id === 'King' ? 52 : 32),
+        radius: 1.5 + Math.random() * (unit.id === 'King' ? 3.2 : 2.2),
+        color: Math.random() > 0.55 ? '#FFFFFF' : '#D8EFF7',
+        alpha: 0.9,
+        decay: 2.8,
+        type: 'snow',
+      });
+    }
   }
 
   private updateSnowballs(dt: number) {
@@ -705,7 +723,7 @@ export class GameEngine {
   // --- PARTICLES & DAMAGE TEXT ---
 
   private addSpawnParticles(x: number, y: number) {
-    const screenY = this.fieldHeight - 130 + y;
+    const screenY = this.fieldHeight * 0.5 + y;
     for (let i = 0; i < 8; i++) {
       this.particles.push({
         x,
