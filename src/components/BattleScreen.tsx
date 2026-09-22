@@ -41,6 +41,16 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
   // Selected unit for field placement
   const [selectedUnitId, setSelectedUnitId] = useState<UnitId | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
+  const selectedUnitIdRef = useRef<UnitId | null>(null);
+  const hoverPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    selectedUnitIdRef.current = selectedUnitId;
+  }, [selectedUnitId]);
+
+  useEffect(() => {
+    hoverPosRef.current = hoverPos;
+  }, [hoverPos]);
 
   // Initialize Game Engine
   useEffect(() => {
@@ -89,9 +99,11 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
             snowballs: engineRef.current.snowballs,
             particles: engineRef.current.particles,
             damageNumbers: engineRef.current.damageNumbers,
-            selectedUnitToPlace: selectedUnitId ? UNIT_CONFIGS[selectedUnitId] : null,
-            hoverX: hoverPos?.x ?? null,
-            hoverY: hoverPos?.y ?? null,
+            selectedUnitToPlace: selectedUnitIdRef.current
+              ? UNIT_CONFIGS[selectedUnitIdRef.current]
+              : null,
+            hoverX: hoverPosRef.current?.x ?? null,
+            hoverY: hoverPosRef.current?.y ?? null,
             cheerActive: engineRef.current.cheerActive,
             isCastleDestroyed: engineRef.current.isFinished,
             winnerTeam: engineRef.current.winnerTeam,
@@ -114,9 +126,9 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
     const handleResize = () => {
       if (containerRef.current && canvasRef.current && engineRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        const dpr = window.devicePixelRatio || 1;
-        const width = Math.floor(rect.width);
-        const height = Math.floor(rect.height);
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const width = Math.max(1, Math.floor(rect.width));
+        const height = Math.max(1, Math.floor(rect.height));
 
         canvasRef.current.width = width * dpr;
         canvasRef.current.height = height * dpr;
@@ -134,8 +146,16 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
     };
 
     handleResize();
+    const resizeObserver = new ResizeObserver(handleResize);
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
   }, []);
 
   // Keyboard hotkeys for quick unit spawning (1..5) & cheer mash (Space)
@@ -178,7 +198,8 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
     }
   };
 
-  // Toggle selection for placement
+  // Select a penguin, then place it on the battlefield like the reference game.
+  // Tapping the same unit again cancels the selection (mobile-friendly right-click alternative).
   const handleUnitButtonClick = (unitId: UnitId) => {
     const config = UNIT_CONFIGS[unitId];
     if (cost < config.cost) {
@@ -186,8 +207,15 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
       return;
     }
 
-    // Direct spawn on click or select
-    handleSpawnUnitDirect(unitId);
+    if (selectedUnitId === unitId) {
+      setSelectedUnitId(null);
+      setHoverPos(null);
+      soundManager.playSe('cancel');
+      return;
+    }
+
+    setSelectedUnitId(unitId);
+    soundManager.playSe('select');
   };
 
   // Cheer Button Tap (응원 연타!!)
@@ -198,35 +226,53 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
     engineRef.current.tapCheerButton();
   };
 
-  // Canvas interaction
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!canvasRef.current || !engineRef.current) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+  // Canvas interaction: Pointer Events cover mouse, pen and touch with one path.
+  const getCanvasPointerPosition = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
+  };
 
-    if (selectedUnitId) {
-      const config = UNIT_CONFIGS[selectedUnitId];
-      if (cost >= config.cost) {
-        const spawned = engineRef.current.trySpawnPlayerUnit(selectedUnitId, x, y);
-        if (spawned) {
-          setSelectedUnitId(null);
-        }
-      }
+  const handleCanvasPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!canvasRef.current || !engineRef.current) return;
+    e.preventDefault();
+
+    const pos = getCanvasPointerPosition(e);
+    setHoverPos(pos);
+
+    if (!selectedUnitId) return;
+
+    const config = UNIT_CONFIGS[selectedUnitId];
+    if (cost < config.cost) {
+      soundManager.playSe('cancel');
+      return;
+    }
+
+    const spawned = engineRef.current.trySpawnPlayerUnit(selectedUnitId, pos.x, pos.y);
+    if (spawned) {
+      setSelectedUnitId(null);
+      setHoverPos(null);
     }
   };
 
-  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!canvasRef.current) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    setHoverPos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
+  const handleCanvasPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!selectedUnitId) return;
+    setHoverPos(getCanvasPointerPosition(e));
   };
 
-  const handleCanvasMouseLeave = () => {
+  const handleCanvasPointerLeave = () => {
     setHoverPos(null);
+  };
+
+  const handleCanvasContextMenu = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    if (selectedUnitId) {
+      setSelectedUnitId(null);
+      setHoverPos(null);
+      soundManager.playSe('cancel');
+    }
   };
 
   const togglePause = () => {
@@ -248,9 +294,9 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
   };
 
   return (
-    <div className="w-full h-full flex flex-col relative select-none bg-[#FAF6E9] overflow-hidden">
+    <div className="w-full h-full min-h-0 flex flex-col relative select-none bg-[#FAF6E9] overflow-hidden">
       {/* 1. TOP HEADER: Timer at Center & Control Buttons on Sides */}
-      <div className="w-full absolute top-0 left-0 pt-3 px-4 z-30 flex items-center justify-between pointer-events-none">
+      <div className="safe-top w-full absolute top-0 left-0 px-3 sm:px-4 z-30 flex items-center justify-between pointer-events-none">
         {/* Left: Home / Exit */}
         <div className="pointer-events-auto flex items-center gap-2">
           <button
@@ -285,11 +331,18 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
       <div ref={containerRef} className="flex-1 w-full relative overflow-hidden bg-[#FAF6E9]">
         <canvas
           ref={canvasRef}
-          onClick={handleCanvasClick}
-          onMouseMove={handleCanvasMouseMove}
-          onMouseLeave={handleCanvasMouseLeave}
-          className="w-full h-full block cursor-pointer"
+          onPointerDown={handleCanvasPointerDown}
+          onPointerMove={handleCanvasPointerMove}
+          onPointerLeave={handleCanvasPointerLeave}
+          onContextMenu={handleCanvasContextMenu}
+          className={`w-full h-full block touch-none ${selectedUnitId ? 'cursor-crosshair' : 'cursor-default'}`}
         />
+
+        {selectedUnitId && (
+          <div className="absolute top-14 left-1/2 -translate-x-1/2 z-20 max-w-[92vw] rounded-full border-2 border-[#1A1A1A] bg-white/95 px-3 py-1 text-center text-[11px] sm:text-xs font-black shadow-sm pointer-events-none whitespace-nowrap">
+            {UNIT_CONFIGS[selectedUnitId].nameKo} 출격 위치를 탭하세요 · 같은 유닛을 다시 누르면 취소
+          </div>
+        )}
 
         {/* Cheer Fever Banner Overlay when Active */}
         {cheerActive && (
@@ -303,9 +356,9 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
       </div>
 
       {/* 3. EXACT BOTTOM HUD (1:1 Match with image.png) */}
-      <div className="w-full bg-[#FAF6E9] px-4 pb-4 pt-1 z-30 flex items-end justify-between max-w-5xl mx-auto">
+      <div className="safe-bottom w-full bg-[#FAF6E9] px-2 sm:px-4 pt-1 z-30 flex flex-wrap sm:flex-nowrap items-end justify-between gap-y-1 max-w-5xl mx-auto">
         {/* LEFT SIDE: Cloud with Castle HP + 8-step Vertical Meter + "응원 연타!!" Button */}
-        <div className="flex items-end gap-3 sm:gap-4">
+        <div className="order-2 sm:order-1 flex items-end gap-1.5 sm:gap-4">
           {/* Cloud + Player Castle HP Number (e.g. 29) */}
           <div className="flex flex-col items-center">
             {/* Hand-Drawn Cloud SVG */}
@@ -363,7 +416,7 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
         </div>
 
         {/* CENTER: Cost Bar + 5 Unit Circular Summon Buttons */}
-        <div className="flex flex-col items-center gap-1.5">
+        <div className="order-1 sm:order-2 w-full sm:w-auto flex flex-col items-center gap-1">
           {/* Cost Bar (Cyan circle with current cost on left + 10 segmented blocks) */}
           <div className="flex items-center">
             {/* Circular Cost Badge */}
@@ -397,7 +450,10 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
                 <div key={uid} className="flex flex-col items-center">
                   <button
                     onClick={() => handleUnitButtonClick(uid)}
-                    className={`w-12 h-12 sm:w-15 sm:h-15 rounded-full bg-white border-2 border-[#1A1A1A] flex items-center justify-center cursor-pointer transition-all duration-150 overflow-hidden ${
+                    aria-pressed={selectedUnitId === uid}
+                    className={`w-11 h-11 sm:w-15 sm:h-15 rounded-full bg-white border-2 border-[#1A1A1A] flex items-center justify-center cursor-pointer transition-all duration-150 overflow-hidden ${
+                      selectedUnitId === uid ? 'ring-4 ring-[#00AEEF]/35 -translate-y-1' : ''
+                    } ${
                       canAfford
                         ? 'hover:scale-108 active:scale-95 shadow-sm'
                         : 'opacity-40 grayscale cursor-not-allowed'
@@ -420,7 +476,7 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
         </div>
 
         {/* RIGHT SIDE: Cloud with Enemy Castle HP Number (e.g. 13) */}
-        <div className="flex flex-col items-center">
+        <div className="order-3 flex flex-col items-center">
           <svg viewBox="0 0 60 42" className="w-9 h-7 sm:w-11 sm:h-8" fill="none">
             <path
               d="M14 36 C8 36, 4 31, 6 24 C4 18, 12 12, 20 14 C24 6, 36 6, 42 12 C50 10, 56 16, 54 24 C58 29, 54 36, 46 36 Z"
