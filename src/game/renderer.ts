@@ -36,8 +36,10 @@ export class GameRenderer {
       cheerActive,
     } = opts;
 
-    const width = canvas.width;
-    const height = canvas.height;
+    // The canvas backing store is DPR-scaled. Render in CSS pixels so the
+    // engine, pointer coordinates and visuals share one coordinate system.
+    const width = canvas.clientWidth || canvas.width;
+    const height = canvas.clientHeight || canvas.height;
 
     // 1. Warm cream paper background (#FAF6E9)
     ctx.fillStyle = '#FAF6E9';
@@ -47,18 +49,20 @@ export class GameRenderer {
     this.drawBackgroundDoodles(ctx, width, height);
 
     // 3. Igloo Bases (Left: Player Base, Right: Enemy Base)
-    const playerIglooX = 135;
+    const sceneScale = Math.max(0.55, Math.min(1, Math.min(width / 900, height / 420)));
+    const baseInset = Math.max(60, Math.min(135, width * 0.18));
+    const playerIglooX = baseInset;
     const playerIglooY = height * 0.65;
-    const enemyIglooX = width - 135;
+    const enemyIglooX = width - baseInset;
     const enemyIglooY = height * 0.35;
 
     const playerDead = playerCastleHp <= 0;
     const enemyDead = enemyCastleHp <= 0;
 
     // Left Player Igloo
-    this.drawIgloo(ctx, 'player', playerIglooX, playerIglooY, playerDead);
+    this.drawIgloo(ctx, 'player', playerIglooX, playerIglooY, playerDead, sceneScale);
     // Right Enemy Igloo
-    this.drawIgloo(ctx, 'enemy', enemyIglooX, enemyIglooY, enemyDead);
+    this.drawIgloo(ctx, 'enemy', enemyIglooX, enemyIglooY, enemyDead, sceneScale);
 
     // 4. Deploy Zone overlay if a unit is currently selected
     if (selectedUnitToPlace) {
@@ -159,13 +163,18 @@ export class GameRenderer {
     team: Team,
     x: number,
     baseY: number,
-    isDestroyed: boolean
+    isDestroyed: boolean,
+    scale: number = 1
   ) {
     const isPlayer = team === 'player';
     const flagColor = isPlayer ? '#00AEEF' : '#EF4444';
     const iglooRadius = 68;
 
     ctx.save();
+    ctx.translate(x, baseY);
+    ctx.scale(scale, scale);
+    x = 0;
+    baseY = 0;
 
     if (isDestroyed) {
       // Destroyed: melted/crumbled snow pile with white surrender flag
@@ -773,22 +782,27 @@ export class GameRenderer {
     hoverX: number | null,
     hoverY: number | null
   ) {
-    const playerAreaWidth = width * 0.44;
+    const playerAreaMinX = Math.max(56, Math.min(100, width * 0.18));
+    const playerAreaWidth = width * 0.46;
     const minY = height * 0.25;
     const maxY = height * 0.8;
 
     ctx.save();
     ctx.fillStyle = 'rgba(0, 174, 239, 0.08)';
-    ctx.fillRect(100, minY, playerAreaWidth - 100, maxY - minY);
+    ctx.fillRect(playerAreaMinX, minY, playerAreaWidth - playerAreaMinX, maxY - minY);
 
     ctx.strokeStyle = 'rgba(0, 174, 239, 0.6)';
     ctx.lineWidth = 2.5;
     ctx.setLineDash([8, 6]);
-    ctx.strokeRect(100, minY, playerAreaWidth - 100, maxY - minY);
+    ctx.strokeRect(playerAreaMinX, minY, playerAreaWidth - playerAreaMinX, maxY - minY);
     ctx.setLineDash([]);
 
     if (hoverX !== null && hoverY !== null) {
-      const inBounds = hoverX >= 100 && hoverX <= playerAreaWidth && hoverY >= minY && hoverY <= maxY;
+      const inBounds =
+        hoverX >= playerAreaMinX &&
+        hoverX <= playerAreaWidth &&
+        hoverY >= minY &&
+        hoverY <= maxY;
       ctx.beginPath();
       ctx.arc(hoverX, hoverY, selectedUnit.size * 0.8, 0, Math.PI * 2);
       ctx.fillStyle = inBounds ? 'rgba(0, 174, 239, 0.25)' : 'rgba(239, 68, 68, 0.25)';
