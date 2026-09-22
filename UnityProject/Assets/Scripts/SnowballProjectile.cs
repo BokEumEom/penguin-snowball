@@ -4,6 +4,7 @@ namespace PenguinSnowball
 {
     public sealed class SnowballProjectile : MonoBehaviour
     {
+        [SerializeField] private SpriteRenderer spriteRenderer;
         [SerializeField] private float arcHeight = 1.2f;
 
         private Transform target;
@@ -20,6 +21,9 @@ namespace PenguinSnowball
             damage = hitDamage;
             speed = Mathf.Max(.1f, moveSpeed);
             fromPlayer = isPlayer;
+
+            if (spriteRenderer == null)
+                spriteRenderer = GetComponent<SpriteRenderer>();
         }
 
         private void Update()
@@ -38,6 +42,7 @@ namespace PenguinSnowball
             var position = Vector3.Lerp(start, end, t);
             position.y += 4f * arcHeight * t * (1f - t);
             transform.position = position;
+            transform.Rotate(0f, 0f, 360f * Time.deltaTime);
 
             if (progress < 1f)
                 return;
@@ -45,6 +50,10 @@ namespace PenguinSnowball
             var unit = target.GetComponentInParent<PenguinUnit>();
             if (unit != null && unit.IsPlayer != fromPlayer)
                 unit.TakeDamage(damage);
+
+            var igloo = target.GetComponentInParent<IglooBase>();
+            if (igloo != null && igloo.IsPlayer != fromPlayer)
+                igloo.TakeDamage(Mathf.Max(1f, damage / 55f));
 
             Destroy(gameObject);
         }
