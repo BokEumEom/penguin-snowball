@@ -43,16 +43,20 @@ Unit identity is silhouette-first:
 
 ## Title screen
 
-Visual hierarchy:
-1. game title;
-2. group of penguins;
-3. Start button;
-4. small difficulty/time choices;
-5. settings.
+The captured reference is extremely sparse. Match that structure:
 
-Do not add unit descriptions to the home screen.
-Do not show stat cards.
-Do not use two-column dashboard panels.
+1. Top center: large hand-drawn game title.
+2. Directly below: small handwritten Latin subtitle.
+3. Top-right: gear icon only.
+4. Center/lower: one blue-flag igloo with a tiny penguin/snowballs visible in the doorway.
+5. Bottom: three widely spaced difficulty labels/buttons.
+6. Right lower-middle: match-time label with previous arrow, current minutes, next arrow.
+7. Bottom-left: tiny version text.
+
+There is **no standalone Start button** and no penguin group hero art. Selecting difficulty starts the match.
+
+Do not add unit descriptions, stat cards, panels, card backgrounds, feature copy, or two-column dashboard UI.
+The dominant visual feature is empty cream space.
 
 Composition should still read when viewed as a 390px-wide phone screenshot.
 
@@ -86,7 +90,7 @@ Before declaring a screen done, answer yes to all:
 - Does the screenshot look like a game rather than an app?
 - Are the penguins clearly hand-drawn at first glance?
 - Are gradients and glossy rendering absent from characters?
-- Is the title screen mostly title, character art and start action?
+- Does the title screen preserve the captured structure: title, single igloo, difficulty start choices, right-side time selector and large empty space?
 - Are unit choices readable at phone size?
 - Does battle UI leave most of the screen to the battlefield?
 - Can a player understand placement and cheer without reading a paragraph?
