@@ -433,7 +433,6 @@ namespace PenguinSnowball.EditorTools
             AddTriggerTransition(machine, hit, "Hit");
             AddTriggerTransition(machine, defeat, "Defeat");
 
-            AddExitToIdle(make, idle, .92f);
             AddExitToIdle(throwState, idle, .94f);
             AddExitToIdle(hit, idle, .9f);
 
@@ -806,7 +805,7 @@ namespace PenguinSnowball.EditorTools
                 cell.transform.SetParent(root, false);
                 var image = cell.GetComponent<Image>();
                 image.color = inactive;
-                result[i] = image;
+                result[count - 1 - i] = image;
             }
 
             return result;
