@@ -125,6 +125,22 @@ export class GameEngine {
     this.fieldHeight = height;
   }
 
+  private getBaseInset() {
+    return Math.max(60, Math.min(135, this.fieldWidth * 0.18));
+  }
+
+  private getPlayerCastleX() {
+    return this.getBaseInset();
+  }
+
+  private getEnemyCastleX() {
+    return this.fieldWidth - this.getBaseInset();
+  }
+
+  private getPlayerDeployMinX() {
+    return Math.max(56, Math.min(100, this.fieldWidth * 0.18));
+  }
+
   // --- PLAYER ACTIONS ---
 
   public canPlayerAfford(unitId: UnitId): boolean {
@@ -141,15 +157,25 @@ export class GameEngine {
       return false;
     }
 
+    const playerAreaMinX = this.getPlayerDeployMinX();
     const playerAreaMaxX = this.fieldWidth * 0.46;
-    let x = spawnX ?? 135;
-    let y = spawnY ? (spawnY - this.fieldHeight * 0.5) : (Math.random() * 60 - 30);
+    const minSpawnY = this.fieldHeight * 0.25;
+    const maxSpawnY = this.fieldHeight * 0.8;
+    let x = spawnX ?? Math.min(playerAreaMaxX, this.getPlayerCastleX() + 22);
+    let y = spawnY !== undefined ? (spawnY - this.fieldHeight * 0.5) : (Math.random() * 60 - 30);
 
-    // Clamp Y lane
+    // Keep lanes readable on small screens while preserving the 2.5D spread.
     y = Math.max(-45, Math.min(45, y));
 
-    // Check bounds if custom X provided
-    if (spawnX !== undefined && (spawnX < 90 || spawnX > playerAreaMaxX)) {
+    // Check the same visible deploy zone used by the renderer.
+    if (
+      spawnX !== undefined &&
+      (spawnX < playerAreaMinX ||
+        spawnX > playerAreaMaxX ||
+        spawnY === undefined ||
+        spawnY < minSpawnY ||
+        spawnY > maxSpawnY)
+    ) {
       soundManager.playSe('disabled');
       return false;
     }
@@ -337,7 +363,7 @@ export class GameEngine {
       this.cpuCost -= config.cost;
       this.stats.unitsSpawnedEnemy++;
 
-      const spawnX = this.fieldWidth - 135;
+      const spawnX = this.getEnemyCastleX() - 22;
       const spawnY = Math.random() * 50 - 25;
 
       const newUnit: BattleUnit = {
@@ -371,8 +397,8 @@ export class GameEngine {
     const playerUnits = this.units.filter((u) => u.team === 'player' && u.state !== 'defeated');
     const enemyUnits = this.units.filter((u) => u.team === 'enemy' && u.state !== 'defeated');
 
-    const enemyCastleX = this.fieldWidth - 135;
-    const playerCastleX = 135;
+    const enemyCastleX = this.getEnemyCastleX();
+    const playerCastleX = this.getPlayerCastleX();
 
     for (const unit of this.units) {
       if (unit.state === 'defeated') {
@@ -536,7 +562,7 @@ export class GameEngine {
     const isPlayer = ball.team === 'player';
 
     // Particle burst at impact
-    const groundScreenY = this.fieldHeight - 130 + ball.targetY;
+    const groundScreenY = this.fieldHeight * 0.5 + ball.targetY;
     for (let i = 0; i < 14; i++) {
       this.particles.push({
         x: ball.targetX,
@@ -550,8 +576,8 @@ export class GameEngine {
       });
     }
 
-    const enemyCastleX = this.fieldWidth - 85;
-    const playerCastleX = 85;
+    const enemyCastleX = this.getEnemyCastleX();
+    const playerCastleX = this.getPlayerCastleX();
 
     // 1. Check Castle Hit
     const castleHitDamage = ball.radius >= 18 ? 2 : 1;
@@ -579,7 +605,7 @@ export class GameEngine {
         const damage = Math.round(ball.damage * falloff);
 
         target.hp -= damage;
-        const targetScreenY = this.fieldHeight - 130 + target.y;
+        const targetScreenY = this.fieldHeight * 0.5 + target.y;
         this.addDamageNumber(target.x, targetScreenY - 30, damage, target.team);
 
         if (isPlayer) {
@@ -658,7 +684,7 @@ export class GameEngine {
     }
 
     // Little panic penguins running away from destroyed castle
-    const destroyedCastleX = result === 'victory' ? this.fieldWidth - 85 : 85;
+    const destroyedCastleX = result === 'victory' ? this.getEnemyCastleX() : this.getPlayerCastleX();
     for (let i = 0; i < 5; i++) {
       this.particles.push({
         x: destroyedCastleX + (Math.random() * 30 - 15),
