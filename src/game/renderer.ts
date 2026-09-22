@@ -1,5 +1,5 @@
 import { BattleUnit, DamageNumber, Particle, Snowball, Team, UnitConfig } from '../types';
-import { UNIT_CONFIGS } from './unitData';
+import { UNIT_CONFIGS, UNIT_VISUALS } from './unitData';
 
 interface RenderOptions {
   canvas: HTMLCanvasElement;
@@ -441,9 +441,8 @@ export class GameRenderer {
     }
   }
 
-  // Render individual hand-drawn cartoon penguin unit
-  // "작은 SD 비율의 손그림 펭귄 캐릭터, 둥근 청록색 몸통, 흰 배, 노란 부리와 발,
-  // 굵고 살짝 흔들리는 검은 외곽선, 평면 색상, 명암 최소화, 단순한 점·선 형태의 얼굴"
+  // Render a colored, species-based SD penguin.
+  // Team identity is carried by the scarf/accents instead of tinting the whole body.
   private drawPenguinIllustration(
     ctx: CanvasRenderingContext2D,
     id: UnitConfig['id'],
@@ -454,218 +453,258 @@ export class GameRenderer {
     attackProgress: number
   ) {
     const config = UNIT_CONFIGS[id];
+    const visual = UNIT_VISUALS[id];
     const s = config.size;
-    const bodyColor = isPlayer ? '#00AEEF' : '#EF4444'; // Turquoise Cyan (Player) vs Crimson Red (Enemy)
-    const strokeColor = '#1A1A1A';
+    const teamColor = isPlayer ? '#45BDE3' : '#E95B57';
+    const teamShadow = isPlayer ? '#238CB5' : '#B93638';
+    const outline = visual.outline;
 
-    ctx.lineWidth = 3.8;
-    ctx.strokeStyle = strokeColor;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = Math.max(2.4, s * 0.095);
 
-    // 1. Waddling Feet (Yellow)
-    ctx.fillStyle = '#FFB800';
-    const footOffset = Math.sin(waddle * 4) * 3;
-
+    // Feet: warm orange, exaggerated enough to keep the waddling silhouette readable.
+    const footPhase = state === 'moving' ? Math.sin(waddle * 18) * s * 0.06 : 0;
+    ctx.fillStyle = visual.feet;
     ctx.beginPath();
-    ctx.ellipse(-s * 0.2, s * 0.38 + footOffset, s * 0.18, s * 0.1, 0, 0, Math.PI * 2);
+    ctx.ellipse(-s * 0.2, s * 0.43 + footPhase, s * 0.19, s * 0.105, -0.08, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(s * 0.2, s * 0.43 - footPhase, s * 0.19, s * 0.105, 0.08, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
-    ctx.beginPath();
-    ctx.ellipse(s * 0.2, s * 0.38 - footOffset, s * 0.18, s * 0.1, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    // 2. Special King Penguin Spiky Mohawk / Crown Feathers!
-    if (id === 'King') {
-      ctx.fillStyle = '#FFD600';
-      ctx.beginPath();
-      ctx.moveTo(-s * 0.28, -s * 0.25);
-      ctx.lineTo(-s * 0.16, -s * 0.78);
-      ctx.lineTo(-s * 0.02, -s * 0.42);
-      ctx.lineTo(s * 0.18, -s * 0.88);
-      ctx.lineTo(s * 0.28, -s * 0.44);
-      ctx.lineTo(s * 0.46, -s * 0.74);
-      ctx.lineTo(s * 0.42, -s * 0.22);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    // 3. Special Speed Penguin Swept-back Feather Tuft!
+    // Species silhouette details behind the body.
     if (id === 'Speed') {
-      ctx.fillStyle = bodyColor;
+      ctx.fillStyle = visual.bodyTop;
       ctx.beginPath();
-      ctx.moveTo(-s * 0.18, -s * 0.35);
-      ctx.lineTo(-s * 0.55, -s * 0.55);
-      ctx.lineTo(-s * 0.22, -s * 0.18);
+      ctx.moveTo(-s * 0.12, -s * 0.32);
+      ctx.lineTo(-s * 0.62, -s * 0.56);
+      ctx.lineTo(-s * 0.25, -s * 0.08);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
     }
 
-    // 4. Main Body (Turquoise/Red, Round SD Proportions)
-    ctx.fillStyle = bodyColor;
-    ctx.beginPath();
-    if (id === 'Shooter') {
-      // Tall slender oval body
-      ctx.ellipse(0, -s * 0.08, s * 0.42, s * 0.56, 0, 0, Math.PI * 2);
-    } else if (id === 'Tank') {
-      // Huge chubby round potato body
-      ctx.ellipse(0, 0, s * 0.58, s * 0.52, 0, 0, Math.PI * 2);
-    } else if (id === 'Speed') {
-      // Streamlined forward-leaning egg
-      ctx.ellipse(s * 0.05, 0, s * 0.5, s * 0.46, 0.18, 0, Math.PI * 2);
-    } else {
-      // Standard round baby SD
-      ctx.ellipse(0, 0, s * 0.48, s * 0.5, 0, 0, Math.PI * 2);
-    }
-    ctx.fill();
-    ctx.stroke();
-
-    // 5. White Belly Patch
-    ctx.fillStyle = '#FFFFFF';
-    ctx.beginPath();
-    if (id === 'Shooter') {
-      ctx.ellipse(s * 0.14, -s * 0.04, s * 0.28, s * 0.44, 0, 0, Math.PI * 2);
-    } else if (id === 'Tank') {
-      ctx.ellipse(s * 0.14, s * 0.05, s * 0.4, s * 0.42, 0, 0, Math.PI * 2);
-    } else {
-      ctx.ellipse(s * 0.12, s * 0.04, s * 0.32, s * 0.38, 0, 0, Math.PI * 2);
-    }
-    ctx.fill();
-    ctx.stroke();
-
-    // 6. Facial Expressions (Minimal Dots & Lines!)
-    if (id === 'Shooter') {
-      // Zen/aiming closed line eye (^ or ⌒)
+    if (id === 'King') {
+      ctx.fillStyle = visual.speciesAccent;
       ctx.beginPath();
-      ctx.arc(s * 0.16, -s * 0.22, s * 0.1, 0.2, Math.PI - 0.2);
+      ctx.moveTo(-s * 0.34, -s * 0.3);
+      ctx.lineTo(-s * 0.24, -s * 0.78);
+      ctx.lineTo(-s * 0.06, -s * 0.48);
+      ctx.lineTo(s * 0.12, -s * 0.86);
+      ctx.lineTo(s * 0.26, -s * 0.46);
+      ctx.lineTo(s * 0.46, -s * 0.72);
+      ctx.lineTo(s * 0.38, -s * 0.25);
+      ctx.closePath();
+      ctx.fill();
       ctx.stroke();
-    } else if (id === 'King') {
-      // Comical fierce angled eyebrow & dot eye
-      ctx.beginPath();
-      ctx.moveTo(s * 0.02, -s * 0.34);
-      ctx.lineTo(s * 0.26, -s * 0.24);
-      ctx.stroke();
-
-      ctx.fillStyle = strokeColor;
-      ctx.beginPath();
-      ctx.arc(s * 0.16, -s * 0.2, s * 0.08, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (id === 'Speed') {
-      // Determined forward gaze with speed brow
-      ctx.beginPath();
-      ctx.moveTo(s * 0.06, -s * 0.28);
-      ctx.lineTo(s * 0.28, -s * 0.24);
-      ctx.stroke();
-
-      ctx.fillStyle = strokeColor;
-      ctx.beginPath();
-      ctx.arc(s * 0.18, -s * 0.2, s * 0.085, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = '#FFFFFF';
-      ctx.beginPath();
-      ctx.arc(s * 0.16, -s * 0.22, s * 0.03, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      // Innocent round dot eye with cute shine
-      ctx.fillStyle = strokeColor;
-      ctx.beginPath();
-      ctx.arc(s * 0.16, -s * 0.2, s * 0.09, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = '#FFFFFF';
-      ctx.beginPath();
-      ctx.arc(s * 0.14, -s * 0.22, s * 0.035, 0, Math.PI * 2);
-      ctx.fill();
     }
 
-    // 7. Beak (Exaggerated Yellow Beak)
-    ctx.fillStyle = '#FFB800';
+    // Rear flipper.
+    ctx.fillStyle = visual.bodyBottom;
     ctx.beginPath();
     if (id === 'Tank') {
-      // Wide open smiling laughing beak!
-      ctx.moveTo(s * 0.32, -s * 0.22);
-      ctx.lineTo(s * 0.68, -s * 0.16);
-      ctx.lineTo(s * 0.34, 0.02);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-
-      // Laugh crease
-      ctx.strokeStyle = '#92400E';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(s * 0.38, -s * 0.14);
-      ctx.lineTo(s * 0.52, -s * 0.12);
-      ctx.stroke();
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = 3.8;
+      ctx.ellipse(-s * 0.42, s * 0.02, s * 0.2, s * 0.32, -0.22, 0, Math.PI * 2);
     } else if (id === 'Speed') {
-      // Pointy sharp beak
-      ctx.moveTo(s * 0.32, -s * 0.22);
-      ctx.lineTo(s * 0.72, -s * 0.16);
-      ctx.lineTo(s * 0.32, -s * 0.08);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-    } else if (id === 'Shooter') {
-      // Slender aiming beak
-      ctx.moveTo(s * 0.3, -s * 0.22);
-      ctx.lineTo(s * 0.68, -s * 0.18);
-      ctx.lineTo(s * 0.3, -s * 0.12);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
+      ctx.ellipse(-s * 0.36, 0, s * 0.27, s * 0.12, -0.28, 0, Math.PI * 2);
     } else {
-      // Cute triangular baby beak
-      ctx.moveTo(s * 0.3, -s * 0.22);
-      ctx.lineTo(s * 0.58, -s * 0.16);
-      ctx.lineTo(s * 0.3, -s * 0.1);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    // 8. Short Stubby Flippers (Wings) - Animated for actions
-    ctx.fillStyle = bodyColor;
-    ctx.beginPath();
-    if (state === 'attacking') {
-      // Flipper raised back to throw
-      ctx.ellipse(-s * 0.22, -s * 0.14, s * 0.24, s * 0.12, -0.8, 0, Math.PI * 2);
-    } else if (state === 'reloading') {
-      // Patting snowball in front
-      ctx.ellipse(s * 0.22, s * 0.08, s * 0.2, s * 0.12, 0.4, 0, Math.PI * 2);
-    } else if (id === 'Speed') {
-      // Swept back airplane wings
-      ctx.ellipse(-s * 0.2, -s * 0.04, s * 0.26, s * 0.11, -0.3, 0, Math.PI * 2);
-    } else if (id === 'King') {
-      // Hands proudly on hips
-      ctx.ellipse(-s * 0.12, 0, s * 0.22, s * 0.12, Math.PI * 0.5, 0, Math.PI * 2);
-    } else {
-      // Waddling flapping flippers
-      ctx.ellipse(-s * 0.1, 0, s * 0.22, s * 0.12, Math.PI * 0.35 + waddle, 0, Math.PI * 2);
+      ctx.ellipse(-s * 0.34, s * 0.02, s * 0.2, s * 0.28, -0.18, 0, Math.PI * 2);
     }
     ctx.fill();
     ctx.stroke();
 
-    // 9. Snowball in hand while reloading or attacking
-    if (state === 'reloading' || state === 'attacking') {
-      const ballR = Math.max(4, config.ballRadius * (state === 'reloading' ? reloadProgress : 1));
-      ctx.fillStyle = '#FFFFFF';
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = 3;
+    // Main body with a soft two-tone cel-painted gradient.
+    const bodyGradient = ctx.createLinearGradient(-s * 0.35, -s * 0.55, s * 0.36, s * 0.52);
+    bodyGradient.addColorStop(0, visual.bodyTop);
+    bodyGradient.addColorStop(1, visual.bodyBottom);
+    ctx.fillStyle = bodyGradient;
+    ctx.beginPath();
+    if (id === 'Shooter') {
+      ctx.ellipse(0, -s * 0.06, s * visual.bodyWidth, s * visual.bodyHeight, 0, 0, Math.PI * 2);
+    } else if (id === 'Speed') {
+      ctx.ellipse(s * 0.035, -s * 0.01, s * visual.bodyWidth, s * visual.bodyHeight, 0.13, 0, Math.PI * 2);
+    } else {
+      ctx.ellipse(0, 0, s * visual.bodyWidth, s * visual.bodyHeight, 0, 0, Math.PI * 2);
+    }
+    ctx.fill();
+    ctx.stroke();
+
+    // Painted body highlight (not an outline-only look).
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.beginPath();
+    ctx.ellipse(-s * 0.15, -s * 0.18, s * 0.18, s * 0.29, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Belly.
+    ctx.fillStyle = visual.belly;
+    ctx.beginPath();
+    if (id === 'Shooter') {
+      ctx.ellipse(s * 0.06, s * 0.04, s * 0.29, s * 0.43, 0, 0, Math.PI * 2);
+    } else if (id === 'Tank') {
+      ctx.ellipse(0, s * 0.08, s * 0.41, s * 0.39, 0, 0, Math.PI * 2);
+    } else {
+      ctx.ellipse(s * 0.02, s * 0.08, s * 0.33, s * 0.37, 0, 0, Math.PI * 2);
+    }
+    ctx.fill();
+
+    // White/cream face patch, split at the forehead like a real penguin mask.
+    ctx.fillStyle = visual.face;
+    ctx.beginPath();
+    if (id === 'Speed') {
+      ctx.ellipse(s * 0.08, -s * 0.24, s * 0.31, s * 0.24, 0.08, 0, Math.PI * 2);
+    } else if (id === 'Shooter') {
+      ctx.ellipse(s * 0.03, -s * 0.29, s * 0.28, s * 0.22, 0, 0, Math.PI * 2);
+    } else {
+      ctx.ellipse(0, -s * 0.25, s * 0.31, s * 0.23, 0, 0, Math.PI * 2);
+    }
+    ctx.fill();
+
+    // Emperor/King golden ear markings.
+    if (id === 'Tank' || id === 'King') {
+      ctx.fillStyle = visual.speciesAccent;
       ctx.beginPath();
-      if (state === 'attacking') {
-        // Snowball held in raised back wing
-        ctx.arc(-s * 0.32, -s * 0.26, ballR, 0, Math.PI * 2);
-      } else {
-        // Snowball being rolled in front
-        ctx.arc(s * 0.32, s * 0.12, ballR, 0, Math.PI * 2);
+      ctx.ellipse(-s * 0.28, -s * 0.27, s * 0.1, s * 0.18, -0.4, 0, Math.PI * 2);
+      ctx.ellipse(s * 0.28, -s * 0.27, s * 0.1, s * 0.18, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Chinstrap penguin marking.
+    if (id === 'Shooter') {
+      ctx.strokeStyle = visual.speciesAccent;
+      ctx.lineWidth = Math.max(2, s * 0.08);
+      ctx.beginPath();
+      ctx.arc(0, -s * 0.18, s * 0.27, 0.18, Math.PI - 0.18);
+      ctx.stroke();
+      ctx.strokeStyle = outline;
+      ctx.lineWidth = Math.max(2.4, s * 0.095);
+    }
+
+    // Eyes and brows.
+    if (id === 'Shooter') {
+      ctx.beginPath();
+      ctx.arc(-s * 0.09, -s * 0.3, s * 0.08, 0.25, Math.PI - 0.25);
+      ctx.arc(s * 0.11, -s * 0.3, s * 0.08, 0.25, Math.PI - 0.25);
+      ctx.stroke();
+    } else {
+      if (id === 'Speed') {
+        ctx.beginPath();
+        ctx.moveTo(-s * 0.17, -s * 0.37);
+        ctx.lineTo(-s * 0.02, -s * 0.32);
+        ctx.stroke();
       }
+      if (id === 'King') {
+        ctx.beginPath();
+        ctx.moveTo(-s * 0.22, -s * 0.35);
+        ctx.lineTo(-s * 0.05, -s * 0.29);
+        ctx.moveTo(s * 0.22, -s * 0.35);
+        ctx.lineTo(s * 0.05, -s * 0.29);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = outline;
+      ctx.beginPath();
+      ctx.ellipse(-s * 0.1, -s * 0.27, s * 0.065, s * 0.078, 0, 0, Math.PI * 2);
+      ctx.ellipse(s * 0.1, -s * 0.27, s * 0.065, s * 0.078, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(-s * 0.12, -s * 0.3, s * 0.021, 0, Math.PI * 2);
+      ctx.arc(s * 0.08, -s * 0.3, s * 0.021, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Warm blush adds the soft illustrated look seen in the reference.
+    ctx.fillStyle = visual.cheek;
+    ctx.globalAlpha = 0.42;
+    ctx.beginPath();
+    ctx.ellipse(-s * 0.24, -s * 0.13, s * 0.09, s * 0.045, 0, 0, Math.PI * 2);
+    ctx.ellipse(s * 0.24, -s * 0.13, s * 0.09, s * 0.045, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Beak.
+    ctx.fillStyle = visual.beak;
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = Math.max(2, s * 0.07);
+    ctx.beginPath();
+    if (id === 'Speed' || id === 'Shooter') {
+      ctx.moveTo(s * 0.01, -s * 0.21);
+      ctx.lineTo(s * 0.48, -s * 0.14);
+      ctx.lineTo(s * 0.02, -s * 0.04);
+    } else if (id === 'Tank') {
+      ctx.moveTo(-s * 0.18, -s * 0.17);
+      ctx.quadraticCurveTo(0, -s * 0.23, s * 0.18, -s * 0.17);
+      ctx.lineTo(0, s * 0.02);
+    } else {
+      ctx.moveTo(-s * 0.14, -s * 0.18);
+      ctx.quadraticCurveTo(0, -s * 0.23, s * 0.14, -s * 0.18);
+      ctx.lineTo(0, -s * 0.03);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Team scarf: clear blue/red faction cue while species colors stay natural.
+    ctx.fillStyle = teamColor;
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = Math.max(2, s * 0.065);
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.31, -s * 0.02);
+    ctx.quadraticCurveTo(0, s * 0.08, s * 0.31, -s * 0.02);
+    ctx.lineTo(s * 0.27, s * 0.12);
+    ctx.quadraticCurveTo(0, s * 0.2, -s * 0.27, s * 0.12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = teamShadow;
+    ctx.beginPath();
+    ctx.moveTo(s * 0.23, s * 0.08);
+    ctx.quadraticCurveTo(s * 0.49, s * 0.12, s * 0.54, s * 0.35);
+    ctx.lineTo(s * 0.32, s * 0.26);
+    ctx.quadraticCurveTo(s * 0.31, s * 0.15, s * 0.2, s * 0.13);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Front/action flipper.
+    const throwLift = state === 'attacking' ? Math.min(1, Math.max(0.25, attackProgress)) : 0;
+    ctx.fillStyle = visual.bodyBottom;
+    ctx.strokeStyle = outline;
+    ctx.lineWidth = Math.max(2.4, s * 0.09);
+    ctx.beginPath();
+    if (state === 'attacking') {
+      ctx.ellipse(-s * 0.28, -s * (0.12 + 0.14 * throwLift), s * 0.25, s * 0.115, -0.85, 0, Math.PI * 2);
+    } else if (state === 'reloading') {
+      ctx.ellipse(s * 0.22, s * 0.18, s * 0.21, s * 0.11, 0.48, 0, Math.PI * 2);
+    } else if (id === 'Speed') {
+      ctx.ellipse(s * 0.34, s * 0.02, s * 0.28, s * 0.1, -0.18, 0, Math.PI * 2);
+    } else if (id === 'King') {
+      ctx.ellipse(s * 0.36, s * 0.04, s * 0.2, s * 0.11, 0.72, 0, Math.PI * 2);
+    } else {
+      ctx.ellipse(s * 0.35, s * 0.03, s * 0.2, s * 0.12, 0.24 + waddle * 0.35, 0, Math.PI * 2);
+    }
+    ctx.fill();
+    ctx.stroke();
+
+    // Snowball while packing / throwing, with a pale-blue underside for volume.
+    if (state === 'reloading' || state === 'attacking') {
+      const ballR = Math.max(4, config.ballRadius * (state === 'reloading' ? Math.max(0.45, reloadProgress) : 1));
+      const bx = state === 'attacking' ? -s * 0.35 : s * 0.34;
+      const by = state === 'attacking' ? -s * 0.34 : s * 0.17;
+      const snowGradient = ctx.createRadialGradient(bx - ballR * 0.3, by - ballR * 0.35, 1, bx, by, ballR);
+      snowGradient.addColorStop(0, '#FFFFFF');
+      snowGradient.addColorStop(0.72, '#F8FDFF');
+      snowGradient.addColorStop(1, '#CFEAF4');
+      ctx.fillStyle = snowGradient;
+      ctx.strokeStyle = outline;
+      ctx.lineWidth = Math.max(2, s * 0.065);
+      ctx.beginPath();
+      ctx.arc(bx, by, ballR, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
     }
