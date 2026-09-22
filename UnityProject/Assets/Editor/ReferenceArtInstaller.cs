@@ -21,7 +21,8 @@ namespace PenguinSnowball.EditorTools
             "igloo_home_blue.png",
             "igloo_battle_blue.png",
             "cloud.png",
-            "snowball.png"
+            "snowball.png",
+            "title_ko.png"
         };
 
         [MenuItem("Tools/Penguin Snowball/Install Reference Art")]
