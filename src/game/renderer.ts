@@ -584,46 +584,80 @@ export class GameRenderer {
       ctx.stroke();
     }
 
-    // Back flipper.
+    // Back flipper: irregular bean/leaf silhouette instead of a geometric ellipse.
     ctx.fillStyle = bodyColor;
     ctx.beginPath();
     if (id === 'Tank') {
-      ctx.ellipse(-s * 0.42, s * 0.03, s * 0.2, s * 0.3, -0.22, 0, Math.PI * 2);
+      ctx.moveTo(-s * 0.31, -s * 0.12);
+      ctx.bezierCurveTo(-s * 0.58, -s * 0.08, -s * 0.59, s * 0.22, -s * 0.38, s * 0.34);
+      ctx.bezierCurveTo(-s * 0.26, s * 0.28, -s * 0.24, s * 0.06, -s * 0.31, -s * 0.12);
     } else if (id === 'Speed') {
-      ctx.ellipse(-s * 0.37, 0, s * 0.27, s * 0.11, -0.3, 0, Math.PI * 2);
+      ctx.moveTo(-s * 0.25, -s * 0.08);
+      ctx.bezierCurveTo(-s * 0.55, -s * 0.13, -s * 0.61, s * 0.02, -s * 0.48, s * 0.13);
+      ctx.bezierCurveTo(-s * 0.36, s * 0.16, -s * 0.28, s * 0.08, -s * 0.25, -s * 0.08);
     } else {
-      ctx.ellipse(-s * 0.34, s * 0.02, s * 0.19, s * 0.27, -0.2, 0, Math.PI * 2);
+      ctx.moveTo(-s * 0.28, -s * 0.12);
+      ctx.bezierCurveTo(-s * 0.5, -s * 0.07, -s * 0.52, s * 0.17, -s * 0.36, s * 0.29);
+      ctx.bezierCurveTo(-s * 0.25, s * 0.24, -s * 0.22, s * 0.05, -s * 0.28, -s * 0.12);
     }
+    ctx.closePath();
     ctx.fill();
     ctx.stroke();
 
-    // Main body — no gradient or naturalistic plumage.
+    // Main body: intentionally asymmetric Bézier blob. This is the biggest
+    // visual change from the previous polished SVG/ellipse look.
     ctx.fillStyle = bodyColor;
     ctx.beginPath();
     if (id === 'Shooter') {
-      ctx.ellipse(0, -s * 0.06, s * 0.43, s * 0.58, 0, 0, Math.PI * 2);
+      ctx.moveTo(-s * 0.08, -s * 0.61);
+      ctx.bezierCurveTo(-s * 0.38, -s * 0.59, -s * 0.48, -s * 0.24, -s * 0.45, s * 0.18);
+      ctx.bezierCurveTo(-s * 0.41, s * 0.48, -s * 0.14, s * 0.6, s * 0.1, s * 0.56);
+      ctx.bezierCurveTo(s * 0.38, s * 0.51, s * 0.48, s * 0.22, s * 0.43, -s * 0.22);
+      ctx.bezierCurveTo(s * 0.39, -s * 0.49, s * 0.18, -s * 0.62, -s * 0.08, -s * 0.61);
     } else if (id === 'Tank') {
-      ctx.ellipse(0, 0, s * 0.58, s * 0.52, 0, 0, Math.PI * 2);
+      ctx.moveTo(-s * 0.08, -s * 0.52);
+      ctx.bezierCurveTo(-s * 0.48, -s * 0.55, -s * 0.63, -s * 0.24, -s * 0.59, s * 0.18);
+      ctx.bezierCurveTo(-s * 0.55, s * 0.48, -s * 0.24, s * 0.58, s * 0.1, s * 0.55);
+      ctx.bezierCurveTo(s * 0.48, s * 0.51, s * 0.61, s * 0.25, s * 0.56, -s * 0.16);
+      ctx.bezierCurveTo(s * 0.52, -s * 0.43, s * 0.26, -s * 0.51, -s * 0.08, -s * 0.52);
     } else if (id === 'Speed') {
-      ctx.ellipse(s * 0.05, -s * 0.01, s * 0.48, s * 0.47, 0.16, 0, Math.PI * 2);
-    } else if (id === 'King') {
-      ctx.ellipse(0, 0, s * 0.52, s * 0.52, 0, 0, Math.PI * 2);
+      ctx.moveTo(-s * 0.02, -s * 0.48);
+      ctx.bezierCurveTo(-s * 0.31, -s * 0.5, -s * 0.5, -s * 0.22, -s * 0.48, s * 0.17);
+      ctx.bezierCurveTo(-s * 0.45, s * 0.42, -s * 0.19, s * 0.5, s * 0.08, s * 0.47);
+      ctx.bezierCurveTo(s * 0.42, s * 0.43, s * 0.58, s * 0.12, s * 0.49, -s * 0.25);
+      ctx.bezierCurveTo(s * 0.43, -s * 0.46, s * 0.22, -s * 0.5, -s * 0.02, -s * 0.48);
     } else {
-      ctx.ellipse(0, 0, s * 0.48, s * 0.5, 0, 0, Math.PI * 2);
+      const wide = id === 'King' ? 0.54 : 0.5;
+      ctx.moveTo(-s * 0.08, -s * 0.5);
+      ctx.bezierCurveTo(-s * 0.4, -s * 0.52, -s * wide, -s * 0.22, -s * wide, s * 0.15);
+      ctx.bezierCurveTo(-s * 0.49, s * 0.43, -s * 0.2, s * 0.54, s * 0.09, s * 0.51);
+      ctx.bezierCurveTo(s * 0.42, s * 0.48, s * 0.55, s * 0.21, s * 0.51, -s * 0.17);
+      ctx.bezierCurveTo(s * 0.48, -s * 0.42, s * 0.2, -s * 0.5, -s * 0.08, -s * 0.5);
     }
+    ctx.closePath();
     ctx.fill();
     ctx.stroke();
 
-    // Large white belly patch. Keep one bold graphic mass, not multiple face/plumage layers.
+    // Large white belly patch, also slightly off-center/asymmetric.
     ctx.fillStyle = white;
     ctx.beginPath();
     if (id === 'Shooter') {
-      ctx.ellipse(s * 0.1, s * 0.03, s * 0.29, s * 0.43, 0, 0, Math.PI * 2);
+      ctx.moveTo(s * 0.01, -s * 0.31);
+      ctx.bezierCurveTo(-s * 0.22, -s * 0.25, -s * 0.24, s * 0.2, -s * 0.12, s * 0.38);
+      ctx.bezierCurveTo(s * 0.03, s * 0.52, s * 0.31, s * 0.44, s * 0.34, s * 0.12);
+      ctx.bezierCurveTo(s * 0.36, -s * 0.16, s * 0.22, -s * 0.33, s * 0.01, -s * 0.31);
     } else if (id === 'Tank') {
-      ctx.ellipse(s * 0.08, s * 0.07, s * 0.4, s * 0.39, 0, 0, Math.PI * 2);
+      ctx.moveTo(-s * 0.08, -s * 0.27);
+      ctx.bezierCurveTo(-s * 0.34, -s * 0.18, -s * 0.37, s * 0.19, -s * 0.22, s * 0.36);
+      ctx.bezierCurveTo(-s * 0.03, s * 0.5, s * 0.35, s * 0.43, s * 0.38, s * 0.12);
+      ctx.bezierCurveTo(s * 0.4, -s * 0.15, s * 0.18, -s * 0.31, -s * 0.08, -s * 0.27);
     } else {
-      ctx.ellipse(s * 0.08, s * 0.06, s * 0.32, s * 0.37, 0, 0, Math.PI * 2);
+      ctx.moveTo(-s * 0.06, -s * 0.28);
+      ctx.bezierCurveTo(-s * 0.29, -s * 0.2, -s * 0.31, s * 0.18, -s * 0.18, s * 0.35);
+      ctx.bezierCurveTo(-s * 0.01, s * 0.48, s * 0.29, s * 0.39, s * 0.31, s * 0.12);
+      ctx.bezierCurveTo(s * 0.32, -s * 0.14, s * 0.17, -s * 0.31, -s * 0.06, -s * 0.28);
     }
+    ctx.closePath();
     ctx.fill();
     ctx.stroke();
 
