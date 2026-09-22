@@ -3,7 +3,7 @@ import { UnitConfig, UnitId } from '../types';
 export const UNIT_CONFIGS: Record<UnitId, UnitConfig> = {
   Small: {
     id: 'Small',
-    nameKo: '아기 펭귄',
+    nameKo: '작은펭귄',
     nameJa: '赤ちゃんペンギン',
     role: 'Swarm',
     roleKo: '빠른 출격 & 지원',
@@ -25,7 +25,7 @@ export const UNIT_CONFIGS: Record<UnitId, UnitConfig> = {
   },
   Speed: {
     id: 'Speed',
-    nameKo: '스피드 펭귄',
+    nameKo: '젠투펭귄',
     nameJa: 'スピードペンギン',
     role: 'Speed',
     roleKo: '초고속 돌격',
@@ -47,7 +47,7 @@ export const UNIT_CONFIGS: Record<UnitId, UnitConfig> = {
   },
   Shooter: {
     id: 'Shooter',
-    nameKo: '스나이퍼 펭귄',
+    nameKo: '턱끈펭귄',
     nameJa: 'シューターペンギン',
     role: 'Shooter',
     roleKo: '초원거리 저격',
@@ -69,7 +69,7 @@ export const UNIT_CONFIGS: Record<UnitId, UnitConfig> = {
   },
   Tank: {
     id: 'Tank',
-    nameKo: '탱커 펭귄',
+    nameKo: '황제펭귄',
     nameJa: 'タンクペンギン',
     role: 'Tank',
     roleKo: '전선 유지 & 넉백',
@@ -92,7 +92,7 @@ export const UNIT_CONFIGS: Record<UnitId, UnitConfig> = {
   },
   King: {
     id: 'King',
-    nameKo: '킹 펭귄',
+    nameKo: '왕펭귄',
     nameJa: 'キングペンギン',
     role: 'Boss',
     roleKo: '황금 왕관 & 광역 폭격',
