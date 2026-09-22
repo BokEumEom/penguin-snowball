@@ -27,16 +27,22 @@ namespace PenguinSnowball
         [Header("Battle")]
         [SerializeField] private Transform playerSpawnRoot;
         [SerializeField] private Transform enemySpawnRoot;
-        [SerializeField] private PenguinUnit[] playerPrefabs;
-        [SerializeField] private PenguinUnit[] enemyPrefabs;
+        [SerializeField] private PenguinUnit[] unitPrefabs;
         [SerializeField] private SnowballProjectile snowballPrefab;
+        [SerializeField] private IglooBase playerBase;
+        [SerializeField] private IglooBase enemyBase;
 
         [Header("Resources")]
         [SerializeField] private int maxCost = 10;
-        [SerializeField] private float costPerSecond = 0.85f;
-        [SerializeField] private float cheerDecayPerSecond = 1.3f;
-        [SerializeField] private float maxCheer = 8f;
+        [SerializeField] private int startingCost = 4;
+        [SerializeField] private float costPerSecond = .85f;
+        [SerializeField] private float cheerDecayPerSecond = 1.15f;
+        [SerializeField] private float maxCheer = 12f;
         [SerializeField] private float maxCheerCraftMultiplier = 2.5f;
+
+        [Header("Enemy AI")]
+        [SerializeField] private float enemySpawnBaseInterval = 2.6f;
+        [SerializeField] private Vector2 enemySpawnYRange = new(-1.8f, 1.5f);
 
         [Header("Units")]
         [SerializeField] private PenguinStats[] unitStats =
@@ -50,14 +56,19 @@ namespace PenguinSnowball
 
         public event Action<int, int> CostChanged;
         public event Action<float, float> CheerChanged;
+        public event Action<int, int> BaseHpChanged;
+        public event Action<int> TimeChanged;
         public event Action<PenguinType?> SelectionChanged;
+        public event Action<bool> MatchEnded;
 
-        public int CurrentCost { get; private set; } = 4;
+        public int CurrentCost { get; private set; }
+        public int MaxCost => maxCost;
         public float Cheer { get; private set; }
+        public float MaxCheer => maxCheer;
         public PenguinType? SelectedType { get; private set; }
-
-        private float costAccumulator;
-        private readonly Dictionary<PenguinType, PenguinStats> statsByType = new();
+        public int RemainingSeconds => Mathf.Max(0, Mathf.CeilToInt(remainingTime));
+        public int PlayerBaseHp => playerBase == null ? 0 : Mathf.CeilToInt(playerBase.Hp);
+        public int EnemyBaseHp => enemyBase == null ? 0 : Mathf.CeilToInt(enemyBase.Hp);
 
         public float SnowballCraftMultiplier
         {
@@ -68,6 +79,15 @@ namespace PenguinSnowball
             }
         }
 
+        private readonly Dictionary<PenguinType, PenguinStats> statsByType = new();
+        private float costAccumulator;
+        private float enemyCost;
+        private float enemyCostAccumulator;
+        private float enemySpawnTimer;
+        private float remainingTime;
+        private int lastReportedSecond = -1;
+        private bool finished;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -77,6 +97,10 @@ namespace PenguinSnowball
             }
 
             Instance = this;
+            CurrentCost = startingCost;
+            enemyCost = startingCost;
+            remainingTime = Mathf.Max(1, GameSessionSettings.DurationSeconds);
+
             statsByType.Clear();
             foreach (var stats in unitStats)
                 statsByType[stats.type] = stats;
@@ -84,11 +108,57 @@ namespace PenguinSnowball
 
         private void Start()
         {
+            playerBase?.Configure(true, 40f);
+            enemyBase?.Configure(false, 40f);
+            playerBase?.Changed += OnBaseChanged;
+            enemyBase?.Changed += OnBaseChanged;
+
             CostChanged?.Invoke(CurrentCost, maxCost);
             CheerChanged?.Invoke(Cheer, maxCheer);
+            BaseHpChanged?.Invoke(PlayerBaseHp, EnemyBaseHp);
+            ReportTime(true);
+        }
+
+        private void OnDestroy()
+        {
+            if (playerBase != null) playerBase.Changed -= OnBaseChanged;
+            if (enemyBase != null) enemyBase.Changed -= OnBaseChanged;
+            if (Instance == this) Instance = null;
         }
 
         private void Update()
+        {
+            if (finished)
+                return;
+
+            TickTimer();
+            TickPlayerResources();
+            TickEnemyAi();
+        }
+
+        private void TickTimer()
+        {
+            remainingTime -= Time.deltaTime;
+            ReportTime(false);
+
+            if (remainingTime > 0f)
+                return;
+
+            var playerWon = EnemyBaseHp < PlayerBaseHp;
+            FinishMatch(playerWon);
+        }
+
+        private void ReportTime(bool force)
+        {
+            var second = RemainingSeconds;
+            if (!force && second == lastReportedSecond)
+                return;
+
+            lastReportedSecond = second;
+            TimeChanged?.Invoke(second);
+        }
+
+        private void TickPlayerResources()
         {
             costAccumulator += costPerSecond * Time.deltaTime;
             if (costAccumulator >= 1f && CurrentCost < maxCost)
@@ -104,6 +174,69 @@ namespace PenguinSnowball
                 Cheer = Mathf.Max(0f, Cheer - cheerDecayPerSecond * Time.deltaTime);
                 CheerChanged?.Invoke(Cheer, maxCheer);
             }
+        }
+
+        private void TickEnemyAi()
+        {
+            var difficultyCostScale = GameSessionSettings.Difficulty switch
+            {
+                BattleDifficulty.Easy => .72f,
+                BattleDifficulty.Hard => 1.22f,
+                _ => 1f
+            };
+
+            enemyCostAccumulator += costPerSecond * difficultyCostScale * Time.deltaTime;
+            if (enemyCostAccumulator >= 1f && enemyCost < maxCost)
+            {
+                var add = Mathf.FloorToInt(enemyCostAccumulator);
+                enemyCostAccumulator -= add;
+                enemyCost = Mathf.Min(maxCost, enemyCost + add);
+            }
+
+            enemySpawnTimer -= Time.deltaTime;
+            if (enemySpawnTimer > 0f)
+                return;
+
+            var intervalScale = GameSessionSettings.Difficulty switch
+            {
+                BattleDifficulty.Easy => 1.28f,
+                BattleDifficulty.Hard => .72f,
+                _ => 1f
+            };
+
+            enemySpawnTimer = enemySpawnBaseInterval * intervalScale * UnityEngine.Random.Range(.75f, 1.2f);
+            SpawnEnemyAffordable();
+        }
+
+        private void SpawnEnemyAffordable()
+        {
+            var candidates = new List<PenguinType>();
+            foreach (var pair in statsByType)
+                if (pair.Value.cost <= enemyCost)
+                    candidates.Add(pair.Key);
+
+            if (candidates.Count == 0)
+                return;
+
+            candidates.Sort((a, b) => statsByType[a].cost.CompareTo(statsByType[b].cost));
+
+            var difficultyBias = GameSessionSettings.Difficulty == BattleDifficulty.Hard ? .78f : .55f;
+            var index = UnityEngine.Random.value < difficultyBias
+                ? UnityEngine.Random.Range(Mathf.Max(0, candidates.Count - 2), candidates.Count)
+                : UnityEngine.Random.Range(0, candidates.Count);
+
+            var type = candidates[index];
+            var stats = statsByType[type];
+            var prefab = FindPrefab(type);
+            if (prefab == null)
+                return;
+
+            enemyCost -= stats.cost;
+            var position = enemySpawnRoot != null ? enemySpawnRoot.position : new Vector3(6.2f, 1.2f, 0f);
+            position.y = UnityEngine.Random.Range(enemySpawnYRange.x, enemySpawnYRange.y);
+
+            var unit = Instantiate(prefab, position, Quaternion.identity, enemySpawnRoot);
+            unit.Initialize(this, stats, false, snowballPrefab);
         }
 
         public PenguinStats GetStats(PenguinType type) => statsByType[type];
@@ -125,14 +258,14 @@ namespace PenguinSnowball
 
         public bool TrySpawnSelected(Vector3 worldPosition)
         {
-            if (SelectedType is not PenguinType type)
+            if (finished || SelectedType is not PenguinType type)
                 return false;
 
             var stats = statsByType[type];
             if (CurrentCost < stats.cost)
                 return false;
 
-            var prefab = FindPrefab(playerPrefabs, type);
+            var prefab = FindPrefab(type);
             if (prefab == null)
                 return false;
 
@@ -141,20 +274,46 @@ namespace PenguinSnowball
 
             var unit = Instantiate(prefab, worldPosition, Quaternion.identity, playerSpawnRoot);
             unit.Initialize(this, stats, true, snowballPrefab);
-
             CancelSelection();
             return true;
         }
 
         public void TapCheer()
         {
+            if (finished)
+                return;
+
             Cheer = Mathf.Min(maxCheer, Cheer + 1f);
             CheerChanged?.Invoke(Cheer, maxCheer);
         }
 
-        private static PenguinUnit FindPrefab(IEnumerable<PenguinUnit> prefabs, PenguinType type)
+        public void NotifyBaseDestroyed(IglooBase destroyedBase)
         {
-            foreach (var prefab in prefabs)
+            if (finished)
+                return;
+
+            FinishMatch(!destroyedBase.IsPlayer);
+        }
+
+        private void FinishMatch(bool playerWon)
+        {
+            finished = true;
+            SelectedType = null;
+            SelectionChanged?.Invoke(null);
+            MatchEnded?.Invoke(playerWon);
+        }
+
+        private void OnBaseChanged(IglooBase _)
+        {
+            BaseHpChanged?.Invoke(PlayerBaseHp, EnemyBaseHp);
+        }
+
+        private PenguinUnit FindPrefab(PenguinType type)
+        {
+            if (unitPrefabs == null)
+                return null;
+
+            foreach (var prefab in unitPrefabs)
                 if (prefab != null && prefab.Type == type)
                     return prefab;
 
