@@ -5,10 +5,9 @@ namespace PenguinSnowball
 {
     public sealed class BattlefieldInput : MonoBehaviour, IPointerDownHandler
     {
-        [SerializeField] private Camera worldCamera;
         [SerializeField] private RectTransform battlefieldRect;
-        [SerializeField] private Vector2 worldMin = new(-7.5f, -2.4f);
-        [SerializeField] private Vector2 worldMax = new(-.6f, 2.1f);
+        [SerializeField] private Vector2 playerWorldX = new(-6.2f, -.45f);
+        [SerializeField] private Vector2 worldY = new(-2.15f, 1.65f);
 
         public void OnPointerDown(PointerEventData eventData)
         {
@@ -22,7 +21,10 @@ namespace PenguinSnowball
                 return;
             }
 
-            if (battlefieldRect == null || worldCamera == null)
+            if (battlefieldRect == null)
+                battlefieldRect = transform as RectTransform;
+
+            if (battlefieldRect == null)
                 return;
 
             if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(
@@ -36,13 +38,12 @@ namespace PenguinSnowball
             var nx = Mathf.InverseLerp(rect.xMin, rect.xMax, local.x);
             var ny = Mathf.InverseLerp(rect.yMin, rect.yMax, local.y);
 
-            // Deployment is restricted to the player's half.
-            if (nx > .46f || ny < .08f || ny > .92f)
+            if (nx > .47f || ny < .07f || ny > .93f)
                 return;
 
             var world = new Vector3(
-                Mathf.Lerp(worldMin.x, worldMax.x, nx / .46f),
-                Mathf.Lerp(worldMin.y, worldMax.y, ny),
+                Mathf.Lerp(playerWorldX.x, playerWorldX.y, nx / .47f),
+                Mathf.Lerp(worldY.x, worldY.y, ny),
                 0f);
 
             battle.TrySpawnSelected(world);
