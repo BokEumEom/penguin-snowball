@@ -6,3 +6,14 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Unity migration project
+UnityProject/Library/
+UnityProject/Temp/
+UnityProject/Obj/
+UnityProject/Logs/
+UnityProject/UserSettings/
+UnityProject/Build/
+UnityProject/Builds/
+UnityProject/MemoryCaptures/
+UnityProject/Recordings/
