@@ -355,8 +355,8 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
         )}
       </div>
 
-      {/* 3. EXACT BOTTOM HUD (1:1 Match with image.png) */}
-      <div className="safe-bottom w-full bg-[#FAF6E9] px-2 sm:px-4 pt-1 z-30 flex flex-wrap sm:flex-nowrap items-end justify-between gap-y-1 max-w-5xl mx-auto">
+      {/* 3. Illustrated bottom HUD */}
+      <div className="safe-bottom w-full bg-[#FFFDF5]/95 border-t-[3px] border-[#20262E] px-2 sm:px-4 pt-2 z-30 flex flex-wrap sm:flex-nowrap items-end justify-between gap-y-1 max-w-5xl mx-auto shadow-[0_-4px_0_rgba(32,38,46,0.08)]">
         {/* LEFT SIDE: Cloud with Castle HP + 8-step Vertical Meter + "응원 연타!!" Button */}
         <div className="order-2 sm:order-1 flex items-end gap-1.5 sm:gap-4">
           {/* Cloud + Player Castle HP Number (e.g. 29) */}
@@ -402,7 +402,7 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
             </span>
             <button
               onClick={handleCheerClick}
-              className={`w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-white border-2 border-[#1A1A1A] shadow-sm flex items-center justify-center cursor-pointer transition-transform ${
+              className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#FFD65A] border-[2.5px] border-[#20262E] shadow-[0_3px_0_#20262E] flex items-center justify-center cursor-pointer transition-transform ${
                 cheerBounce ? 'scale-115 rotate-6' : 'hover:scale-105 active:scale-95'
               }`}
               title="클릭하여 응원 게이지를 채우세요! (스페이스바로도 가능)"
@@ -420,19 +420,19 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
           {/* Cost Bar (Cyan circle with current cost on left + 10 segmented blocks) */}
           <div className="flex items-center">
             {/* Circular Cost Badge */}
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#00AEEF] border-2 border-[#1A1A1A] flex items-center justify-center text-white font-black text-xs sm:text-sm font-['Fredoka',sans-serif] z-10 -mr-1 shadow-sm">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#45BDE3] border-2 border-[#20262E] flex items-center justify-center text-white font-black text-xs sm:text-sm font-['Fredoka',sans-serif] z-10 -mr-1 shadow-sm">
               {cost}
             </div>
 
             {/* Segmented Horizontal Bar (10 blocks with rounded ends) */}
-            <div className="flex h-4 sm:h-5 rounded-md border-2 border-[#1A1A1A] overflow-hidden bg-[#FAF6E9]">
+            <div className="flex h-4 sm:h-5 rounded-full border-2 border-[#20262E] overflow-hidden bg-[#F8F3E5] shadow-[0_2px_0_#D8D1BD]">
               {Array.from({ length: 10 }).map((_, i) => {
                 const isFilled = i < cost;
                 return (
                   <div
                     key={i}
                     className={`w-4 sm:w-6 h-full border-r border-[#1A1A1A] last:border-r-0 transition-colors duration-150 ${
-                      isFilled ? 'bg-[#00AEEF]' : 'bg-[#FAF6E9]'
+                      isFilled ? 'bg-[#45BDE3]' : 'bg-[#F8F3E5]'
                     }`}
                   />
                 );
@@ -451,8 +451,8 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
                   <button
                     onClick={() => handleUnitButtonClick(uid)}
                     aria-pressed={selectedUnitId === uid}
-                    className={`w-11 h-11 sm:w-15 sm:h-15 rounded-full bg-white border-2 border-[#1A1A1A] flex items-center justify-center cursor-pointer transition-all duration-150 overflow-hidden ${
-                      selectedUnitId === uid ? 'ring-4 ring-[#00AEEF]/35 -translate-y-1' : ''
+                    className={`w-11 h-11 sm:w-15 sm:h-15 rounded-full bg-[#FFFDF5] border-[2.5px] border-[#20262E] flex items-center justify-center cursor-pointer transition-all duration-150 overflow-hidden ${
+                      selectedUnitId === uid ? 'ring-4 ring-[#45BDE3]/35 -translate-y-1 bg-[#EAF7FA] shadow-[0_4px_0_#20262E]' : ''
                     } ${
                       canAfford
                         ? 'hover:scale-108 active:scale-95 shadow-sm'
@@ -464,7 +464,7 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
                   </button>
 
                   {/* Cost Pill Badge Below (1, 3, 5, 7, 10) */}
-                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border-2 border-[#1A1A1A] flex items-center justify-center -mt-2 z-10 shadow-sm">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#FFD65A] border-2 border-[#20262E] flex items-center justify-center -mt-2 z-10 shadow-sm">
                     <span className="font-['Fredoka',sans-serif] font-black text-[11px] sm:text-xs text-[#1A1A1A]">
                       {config.cost}
                     </span>
