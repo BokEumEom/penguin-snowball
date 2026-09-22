@@ -392,8 +392,7 @@ export class GameRenderer {
       ctx.rotate(kb.rotation);
       this.drawPenguinIllustration(ctx, unit.id, isPlayer, 0, 'defeated', 0, 0);
 
-      // White surrender flag
-      ctx.strokeStyle = '#1A1A1A';
+      ctx.strokeStyle = '#20262E';
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(10, 0);
@@ -406,23 +405,106 @@ export class GameRenderer {
       return;
     }
 
-    // Waddling & bouncing animation
+    const walkPhase = unit.walkFrame * 2.5;
     let waddleAngle = 0;
     let bounceY = 0;
+    let shiftX = 0;
+    let scaleX = 1;
+    let scaleY = 1;
+
+    // Each species has its own locomotion personality.
     if (unit.state === 'moving') {
-      waddleAngle = Math.sin(unit.walkFrame * 2.5) * 0.14;
-      bounceY = -Math.abs(Math.sin(unit.walkFrame * 2.5)) * 5;
-    } else if (unit.state === 'attacking') {
-      waddleAngle = -0.2; // Leaning back to hurl
+      const step = Math.sin(walkPhase);
+      const lift = Math.abs(Math.sin(walkPhase));
+
+      switch (unit.id) {
+        case 'Small':
+          // Short, eager waddles: the cute "tottering" motion is deliberately exaggerated.
+          waddleAngle = step * 0.2;
+          bounceY = -lift * 5.5;
+          shiftX = step * 1.8;
+          scaleX = 1 + lift * 0.025;
+          scaleY = 1 - lift * 0.02;
+          break;
+        case 'Speed':
+          // Forward-leaning run with smaller side-to-side wobble.
+          waddleAngle = -0.1 + step * 0.055;
+          bounceY = -Math.abs(Math.sin(walkPhase * 1.35)) * 3.3;
+          shiftX = Math.sin(walkPhase * 1.35) * 1.4;
+          scaleX = 1.035;
+          scaleY = 0.97;
+          break;
+        case 'Shooter':
+          // Calm long steps; keeps the upper body steady.
+          waddleAngle = step * 0.055;
+          bounceY = -lift * 2.2;
+          shiftX = step * 0.8;
+          break;
+        case 'Tank':
+          // Heavy stomp: subtle rotation, visible squash on contact.
+          waddleAngle = step * 0.075;
+          bounceY = -lift * 2;
+          scaleX = 1 + (1 - lift) * 0.035;
+          scaleY = 1 - (1 - lift) * 0.03;
+          break;
+        case 'King':
+          // Slow, proud stride.
+          waddleAngle = step * 0.06;
+          bounceY = -lift * 2.5;
+          shiftX = step * 0.5;
+          break;
+      }
     }
 
-    ctx.translate(unit.x, groundY + bounceY);
+    // Spawn pop gives placement a toy-like, illustrated feel.
+    if (unit.state === 'spawning') {
+      const spawnProgress = Math.max(0, Math.min(1, 1 - unit.stateTimer / 0.25));
+      const eased = 1 - Math.pow(1 - spawnProgress, 3);
+      const pop = 0.58 + eased * 0.48;
+      scaleX *= pop + Math.sin(spawnProgress * Math.PI) * 0.08;
+      scaleY *= pop - Math.sin(spawnProgress * Math.PI) * 0.04;
+      bounceY -= Math.sin(spawnProgress * Math.PI) * config.size * 0.26;
+    }
+
+    // Packing snow: crouch and pulse as the snowball grows in the flippers.
+    if (unit.state === 'reloading') {
+      const pack = Math.max(0, Math.min(1, unit.reloadProgress));
+      const knead = Math.sin(pack * Math.PI * 6);
+      bounceY += config.size * (0.05 + pack * 0.035) + knead * 0.7;
+      waddleAngle = knead * 0.025;
+      scaleX *= 1.035 + Math.abs(knead) * 0.015;
+      scaleY *= 0.965;
+    }
+
+    // Throw animation has a clear anticipation -> release arc.
+    if (unit.state === 'attacking') {
+      const t = Math.max(0, Math.min(1, unit.attackProgress));
+      if (t < 0.58) {
+        const windup = t / 0.58;
+        const power = unit.id === 'King' ? 1.35 : unit.id === 'Tank' ? 1.15 : 1;
+        waddleAngle = -0.12 - windup * 0.23 * power;
+        shiftX = -config.size * 0.06 * windup * power;
+        bounceY += config.size * 0.04 * windup;
+        scaleX *= 1 + 0.035 * windup;
+        scaleY *= 1 - 0.04 * windup;
+      } else {
+        const release = (t - 0.58) / 0.42;
+        const power = unit.id === 'King' ? 1.4 : unit.id === 'Tank' ? 1.18 : 1;
+        waddleAngle = 0.18 * release * power;
+        shiftX = config.size * 0.11 * release * power;
+        bounceY -= Math.sin(release * Math.PI) * config.size * 0.08 * power;
+        scaleX *= 1 - 0.03 * release;
+        scaleY *= 1 + 0.025 * release;
+      }
+    }
+
+    ctx.translate(unit.x + shiftX, groundY + bounceY);
     if (!unit.isFacingRight) {
       ctx.scale(-1, 1);
     }
     ctx.rotate(waddleAngle);
+    ctx.scale(scaleX, scaleY);
 
-    // Draw Hand-Drawn SD Doodle Penguin
     this.drawPenguinIllustration(
       ctx,
       unit.id,
@@ -435,7 +517,6 @@ export class GameRenderer {
 
     ctx.restore();
 
-    // Minimal HP indicator if damaged
     if (unit.hp < unit.maxHp && unit.hp > 0 && unit.state !== 'defeated') {
       this.drawUnitHpBar(ctx, unit.x, groundY - config.size * 1.15, unit.hp, unit.maxHp, isPlayer);
     }
