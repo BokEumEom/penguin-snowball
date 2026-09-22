@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { UnitId } from '../types';
+import { UNIT_VISUALS } from '../game/unitData';
 
 interface PortraitProps {
   unitId: UnitId;
@@ -8,473 +9,163 @@ interface PortraitProps {
   isEnemy?: boolean;
 }
 
+const BODY_PATHS: Record<UnitId, string> = {
+  Small: 'M50 15 C31 15 20 31 20 57 C20 77 30 87 50 87 C70 87 80 77 80 57 C80 31 69 15 50 15 Z',
+  Speed: 'M55 14 C36 14 25 31 24 55 C23 74 34 85 53 85 C73 85 82 72 80 52 C78 31 70 14 55 14 Z',
+  Shooter: 'M50 10 C35 10 27 27 27 56 C27 78 35 88 50 88 C65 88 73 78 73 56 C73 27 65 10 50 10 Z',
+  Tank: 'M50 15 C24 15 14 35 14 61 C14 81 27 89 50 89 C73 89 86 81 86 61 C86 35 76 15 50 15 Z',
+  King: 'M50 19 C28 19 18 37 18 62 C18 81 29 89 50 89 C71 89 82 81 82 62 C82 37 72 19 50 19 Z',
+};
+
+const BELLY_PATHS: Record<UnitId, string> = {
+  Small: 'M50 36 C38 36 31 48 31 66 C31 78 39 83 50 83 C61 83 69 78 69 66 C69 48 62 36 50 36 Z',
+  Speed: 'M57 35 C45 35 38 48 39 65 C40 77 47 81 57 81 C67 81 74 73 72 60 C70 45 66 35 57 35 Z',
+  Shooter: 'M51 28 C41 28 35 42 35 64 C35 78 41 83 51 83 C61 83 67 77 67 63 C67 42 61 28 51 28 Z',
+  Tank: 'M50 35 C33 35 25 49 25 68 C25 80 35 84 50 84 C65 84 75 80 75 68 C75 49 67 35 50 35 Z',
+  King: 'M50 38 C36 38 29 50 29 69 C29 80 37 84 50 84 C63 84 71 80 71 69 C71 50 64 38 50 38 Z',
+};
+
 export const PenguinPortrait: React.FC<PortraitProps> = ({
   unitId,
   size = 64,
   className = '',
   isEnemy = false,
 }) => {
-  const bodyColor = isEnemy ? '#EF4444' : '#00AEEF'; // Crimson red or Turquoise cyan
-  const strokeColor = '#1A1A1A';
+  const visual = UNIT_VISUALS[unitId];
+  const teamColor = isEnemy ? '#E95B57' : '#45BDE3';
+  const gradientId = `penguin-body-${useId().replace(/:/g, '')}`;
+  const scarfShadow = isEnemy ? '#B93638' : '#238CB5';
+  const eyeX = unitId === 'Speed' ? 57 : 50;
+  const eyeY = unitId === 'Shooter' ? 35 : unitId === 'King' ? 45 : 39;
 
-  switch (unitId) {
-    case 'Small':
-      // 1. 아기 펭귄: 작은 SD 원형 몸통, 흰 배, 작은 부리, 무구한 점 눈, 아기자기한 플리퍼
-      return (
-        <svg
-          viewBox="0 0 100 100"
-          width={size}
-          height={size}
-          className={className}
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          {/* Feet */}
-          <path
-            d="M32 82 C28 86, 26 92, 35 93 C42 93, 44 88, 40 82 Z"
-            fill="#FFB800"
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M60 82 C56 86, 54 92, 63 93 C70 93, 72 88, 68 82 Z"
-            fill="#FFB800"
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      width={size}
+      height={size}
+      className={className}
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id={gradientId} x1="28" y1="18" x2="70" y2="88" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor={visual.bodyTop} />
+          <stop offset="1" stopColor={visual.bodyBottom} />
+        </linearGradient>
+      </defs>
 
-          {/* Chubby Round Turquoise Body */}
-          <path
-            d="M50 14 C28 14, 18 36, 18 60 C18 78, 28 86, 50 86 C72 86, 82 78, 82 60 C82 36, 72 14, 50 14 Z"
-            fill={bodyColor}
-            stroke={strokeColor}
-            strokeWidth="4.5"
-            strokeLinejoin="round"
-          />
+      <ellipse cx="50" cy="89" rx={unitId === 'Tank' ? 30 : 25} ry="5" fill="#D8D4C6" opacity="0.68" />
 
-          {/* White Belly Patch */}
-          <path
-            d="M50 32 C38 32, 30 46, 30 64 C30 76, 38 82, 50 82 C62 82, 70 76, 70 64 C70 46, 62 32, 50 32 Z"
-            fill="#FFFFFF"
-            stroke={strokeColor}
-            strokeWidth="3.5"
-            strokeLinejoin="round"
-          />
+      {/* feet */}
+      <ellipse cx={unitId === 'Speed' ? 35 : 38} cy="86" rx="10" ry="5.5" fill={visual.feet} stroke={visual.outline} strokeWidth="3.3" />
+      <ellipse cx={unitId === 'Speed' ? 66 : 62} cy="86" rx="10" ry="5.5" fill={visual.feet} stroke={visual.outline} strokeWidth="3.3" />
 
-          {/* Short Stubby Flippers (Wings) */}
-          <path
-            d="M19 46 C12 50, 10 60, 15 68 C18 71, 20 68, 21 62 Z"
-            fill={bodyColor}
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M81 46 C88 50, 90 60, 85 68 C82 71, 80 68, 79 62 Z"
-            fill={bodyColor}
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
+      {/* species silhouette accents */}
+      {unitId === 'Speed' && (
+        <path d="M39 21 C29 10 17 12 8 20 C20 23 28 26 39 29 Z" fill={visual.bodyTop} stroke={visual.outline} strokeWidth="3.5" strokeLinejoin="round" />
+      )}
+      {unitId === 'King' && (
+        <path d="M29 28 L34 8 L45 21 L55 5 L64 20 L75 10 L72 31 Z" fill={visual.speciesAccent} stroke={visual.outline} strokeWidth="3.6" strokeLinejoin="round" />
+      )}
 
-          {/* Innocent Dot Eyes */}
-          <ellipse cx="42" cy="40" rx="4.5" ry="5.5" fill={strokeColor} />
-          <circle cx="40.5" cy="38.5" r="1.8" fill="#FFFFFF" />
+      {/* flippers behind body */}
+      <path
+        d={unitId === 'Tank' ? 'M18 49 C7 52 4 64 10 73 C15 77 19 68 22 57 Z' : 'M23 48 C14 50 10 61 15 69 C19 72 23 64 25 56 Z'}
+        fill={visual.bodyBottom}
+        stroke={visual.outline}
+        strokeWidth="3.5"
+        strokeLinejoin="round"
+      />
+      <path
+        d={unitId === 'Speed' ? 'M76 49 C87 50 94 58 96 67 C89 67 82 63 76 57 Z' : unitId === 'Tank' ? 'M82 49 C93 52 96 64 90 73 C85 77 81 68 78 57 Z' : 'M77 48 C86 50 90 61 85 69 C81 72 77 64 75 56 Z'}
+        fill={visual.bodyBottom}
+        stroke={visual.outline}
+        strokeWidth="3.5"
+        strokeLinejoin="round"
+      />
 
-          <ellipse cx="58" cy="40" rx="4.5" ry="5.5" fill={strokeColor} />
-          <circle cx="56.5" cy="38.5" r="1.8" fill="#FFFFFF" />
+      {/* body */}
+      <path d={BODY_PATHS[unitId]} fill={`url(#${gradientId})`} stroke={visual.outline} strokeWidth="4" strokeLinejoin="round" />
 
-          {/* Cute Yellow Beak */}
-          <path
-            d="M44 47 Q50 56 56 47 Q50 49 44 47 Z"
-            fill="#FFB800"
-            stroke={strokeColor}
-            strokeWidth="3.5"
-            strokeLinejoin="round"
-          />
-        </svg>
-      );
+      {/* soft painted highlight */}
+      <path
+        d={unitId === 'Tank' ? 'M27 34 C34 23 46 19 57 21 C43 29 35 41 31 56 C26 50 24 42 27 34 Z' : 'M30 31 C36 22 45 19 54 20 C43 27 36 38 33 51 C29 45 27 37 30 31 Z'}
+        fill="#FFFFFF"
+        opacity="0.12"
+      />
 
-    case 'Speed':
-      // 2. 스피드 펭귄: 날렵한 유선형 몸통, 바람에 젖힌 깃털 머리, 날카로운 부리, 결의에 찬 점눈
-      return (
-        <svg
-          viewBox="0 0 100 100"
-          width={size}
-          height={size}
-          className={className}
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          {/* Running Feet */}
-          <path
-            d="M24 80 C18 84, 18 92, 26 92 C32 92, 34 86, 32 80 Z"
-            fill="#FFB800"
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M62 78 C58 84, 60 92, 70 92 C78 92, 78 84, 72 78 Z"
-            fill="#FFB800"
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
+      {/* face + belly */}
+      <path d={BELLY_PATHS[unitId]} fill={visual.belly} stroke={visual.outline} strokeWidth="2.7" strokeLinejoin="round" />
+      <path
+        d={unitId === 'Speed'
+          ? 'M37 27 C43 20 53 20 59 28 C65 20 73 23 76 31 C72 42 65 47 57 48 C47 47 40 40 37 27 Z'
+          : unitId === 'Shooter'
+          ? 'M34 25 C40 18 47 18 51 26 C56 18 64 19 68 26 C65 37 59 42 51 43 C43 42 37 37 34 25 Z'
+          : 'M31 29 C37 21 45 20 50 29 C55 20 64 21 69 29 C66 41 59 47 50 47 C41 47 34 41 31 29 Z'}
+        fill={visual.face}
+      />
 
-          {/* Backwards Wind-blown Feather Crest / Hair */}
-          <path
-            d="M42 16 C30 8, 22 12, 14 18 C22 22, 30 22, 36 22 Z"
-            fill={bodyColor}
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
+      {/* Emperor/King golden ear patches */}
+      {(unitId === 'Tank' || unitId === 'King') && (
+        <>
+          <path d="M30 29 C23 33 22 43 29 49 C33 44 35 38 36 31 Z" fill={visual.speciesAccent} />
+          <path d="M70 29 C77 33 78 43 71 49 C67 44 65 38 64 31 Z" fill={visual.speciesAccent} />
+        </>
+      )}
 
-          {/* Aerodynamic Forward-leaning Body */}
-          <path
-            d="M56 16 C36 16, 24 34, 22 58 C20 78, 30 84, 52 84 C74 84, 82 72, 82 54 C82 32, 74 16, 56 16 Z"
-            fill={bodyColor}
-            stroke={strokeColor}
-            strokeWidth="4.5"
-            strokeLinejoin="round"
-          />
+      {/* chinstrap marking */}
+      {unitId === 'Shooter' && (
+        <path d="M34 39 Q50 51 68 39" stroke={visual.speciesAccent} strokeWidth="4" strokeLinecap="round" />
+      )}
 
-          {/* White Belly */}
-          <path
-            d="M58 34 C44 34, 36 46, 38 64 C40 76, 48 80, 58 80 C68 80, 76 72, 74 60 C72 44, 68 34, 58 34 Z"
-            fill="#FFFFFF"
-            stroke={strokeColor}
-            strokeWidth="3.5"
-            strokeLinejoin="round"
-          />
+      {/* eyes */}
+      {unitId === 'Shooter' ? (
+        <>
+          <path d="M40 34 Q45 30 50 34" stroke={visual.outline} strokeWidth="3.3" strokeLinecap="round" />
+          <path d="M54 34 Q59 30 64 34" stroke={visual.outline} strokeWidth="3.3" strokeLinecap="round" />
+        </>
+      ) : (
+        <>
+          {unitId === 'Speed' && <path d="M42 31 L51 35" stroke={visual.outline} strokeWidth="3" strokeLinecap="round" />}
+          {unitId === 'King' && (
+            <>
+              <path d="M37 38 L47 42" stroke={visual.outline} strokeWidth="3.2" strokeLinecap="round" />
+              <path d="M63 38 L53 42" stroke={visual.outline} strokeWidth="3.2" strokeLinecap="round" />
+            </>
+          )}
+          <ellipse cx={eyeX - 7} cy={eyeY} rx="3.8" ry="4.7" fill={visual.outline} />
+          <ellipse cx={eyeX + 7} cy={eyeY} rx="3.8" ry="4.7" fill={visual.outline} />
+          <circle cx={eyeX - 8} cy={eyeY - 1.5} r="1.15" fill="#FFFFFF" />
+          <circle cx={eyeX + 6} cy={eyeY - 1.5} r="1.15" fill="#FFFFFF" />
+        </>
+      )}
 
-          {/* Swept-back Wings */}
-          <path
-            d="M23 48 C12 50, 6 56, 4 66 C8 66, 14 62, 20 56 Z"
-            fill={bodyColor}
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M78 50 C86 52, 92 60, 92 68 C88 68, 82 64, 76 58 Z"
-            fill={bodyColor}
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
+      {/* cheeks */}
+      <ellipse cx="34" cy="46" rx="5" ry="2.7" fill={visual.cheek} opacity="0.46" />
+      <ellipse cx="66" cy="46" rx="5" ry="2.7" fill={visual.cheek} opacity="0.46" />
 
-          {/* Determined Angled Eyebrows & Eyes */}
-          <path
-            d="M44 34 L54 38"
-            stroke={strokeColor}
-            strokeWidth="3.5"
-            strokeLinecap="round"
-          />
-          <circle cx="50" cy="42" r="4.2" fill={strokeColor} />
-          <circle cx="48.5" cy="40.5" r="1.5" fill="#FFFFFF" />
+      {/* beak */}
+      <path
+        d={unitId === 'Speed' || unitId === 'Shooter'
+          ? 'M48 45 L72 49 L48 55 Z'
+          : unitId === 'Tank'
+          ? 'M39 47 Q50 43 61 47 L50 59 Z'
+          : 'M42 47 Q50 44 58 47 L50 55 Z'}
+        fill={visual.beak}
+        stroke={visual.outline}
+        strokeWidth="2.8"
+        strokeLinejoin="round"
+      />
 
-          <path
-            d="M66 35 L74 38"
-            stroke={strokeColor}
-            strokeWidth="3.5"
-            strokeLinecap="round"
-          />
-          <circle cx="70" cy="42" r="4.2" fill={strokeColor} />
-          <circle cx="68.5" cy="40.5" r="1.5" fill="#FFFFFF" />
+      {/* team scarf: team identity without recoloring the penguin */}
+      <path d="M29 52 Q50 59 71 52 L69 61 Q50 67 31 61 Z" fill={teamColor} stroke={visual.outline} strokeWidth="2.7" strokeLinejoin="round" />
+      <path d="M66 57 C77 60 82 65 84 74 L74 70 C72 64 69 61 64 60 Z" fill={scarfShadow} stroke={visual.outline} strokeWidth="2.5" strokeLinejoin="round" />
 
-          {/* Pointy Sharp Speed Beak */}
-          <path
-            d="M54 48 L76 52 L54 59 Z"
-            fill="#FFB800"
-            stroke={strokeColor}
-            strokeWidth="3.5"
-            strokeLinejoin="round"
-          />
-        </svg>
-      );
-
-    case 'Shooter':
-      // 3. 스나이퍼 펭귄: 긴 달걀형 몸통, 여유로운 실눈(호선 눈), 긴 부리, 눈뭉치를 조준하는 포즈
-      return (
-        <svg
-          viewBox="0 0 100 100"
-          width={size}
-          height={size}
-          className={className}
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          {/* Small feet */}
-          <path
-            d="M34 84 C30 88, 30 94, 38 94 C44 94, 46 88, 42 84 Z"
-            fill="#FFB800"
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M58 84 C54 88, 54 94, 62 94 C68 94, 70 88, 66 84 Z"
-            fill="#FFB800"
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-
-          {/* Tall Slender Body */}
-          <path
-            d="M50 10 C34 10, 26 28, 26 56 C26 78, 34 86, 50 86 C66 86, 74 78, 74 56 C74 28, 66 10, 50 10 Z"
-            fill={bodyColor}
-            stroke={strokeColor}
-            strokeWidth="4.5"
-            strokeLinejoin="round"
-          />
-
-          {/* White Chest / Belly */}
-          <path
-            d="M50 26 C40 26, 34 40, 34 62 C34 76, 40 82, 50 82 C60 82, 66 76, 66 62 C66 40, 60 26, 50 26 Z"
-            fill="#FFFFFF"
-            stroke={strokeColor}
-            strokeWidth="3.5"
-            strokeLinejoin="round"
-          />
-
-          {/* Relaxed Zen/Squinting Eyes (Curved lines: ^ ^) */}
-          <path
-            d="M38 36 Q44 30 50 36"
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinecap="round"
-          />
-          <path
-            d="M56 36 Q62 30 68 36"
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinecap="round"
-          />
-
-          {/* Long Slender Aiming Beak */}
-          <path
-            d="M48 42 L72 45 L48 51 Z"
-            fill="#FFB800"
-            stroke={strokeColor}
-            strokeWidth="3.5"
-            strokeLinejoin="round"
-          />
-
-          {/* Flipper holding a big snowball ready to toss */}
-          <path
-            d="M26 52 C20 54, 18 64, 22 70 C26 72, 28 66, 28 58 Z"
-            fill={bodyColor}
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-          {/* Held Snowball */}
-          <circle
-            cx="72"
-            cy="58"
-            r="12"
-            fill="#FFFFFF"
-            stroke={strokeColor}
-            strokeWidth="3.5"
-          />
-          <path
-            d="M66 56 C68 62, 74 68, 80 62"
-            stroke={bodyColor}
-            strokeWidth="4.5"
-            strokeLinecap="round"
-          />
-        </svg>
-      );
-
-    case 'Tank':
-      // 4. 탱커 펭귄: 커다랗고 뚱뚱한 감자형 몸통, 활짝 벌려 웃는 커다란 부리, 작은 날개
-      return (
-        <svg
-          viewBox="0 0 100 100"
-          width={size}
-          height={size}
-          className={className}
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          {/* Big Wide Feet */}
-          <path
-            d="M24 84 C18 88, 16 95, 28 95 C38 95, 40 88, 36 84 Z"
-            fill="#FFB800"
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M64 84 C60 88, 62 95, 74 95 C84 95, 84 88, 76 84 Z"
-            fill="#FFB800"
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-
-          {/* Giant Chubby Potato Body */}
-          <path
-            d="M50 14 C22 14, 12 36, 12 62 C12 82, 24 88, 50 88 C76 88, 88 82, 88 62 C88 36, 78 14, 50 14 Z"
-            fill={bodyColor}
-            stroke={strokeColor}
-            strokeWidth="4.5"
-            strokeLinejoin="round"
-          />
-
-          {/* Broad White Belly */}
-          <path
-            d="M50 32 C32 32, 24 46, 24 66 C24 78, 34 84, 50 84 C66 84, 76 78, 76 66 C76 46, 68 32, 50 32 Z"
-            fill="#FFFFFF"
-            stroke={strokeColor}
-            strokeWidth="3.5"
-            strokeLinejoin="round"
-          />
-
-          {/* Small Flapping Wings */}
-          <path
-            d="M13 52 C4 56, 4 66, 10 72 C14 74, 16 68, 16 60 Z"
-            fill={bodyColor}
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M87 52 C96 56, 96 66, 90 72 C86 74, 84 68, 84 60 Z"
-            fill={bodyColor}
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-
-          {/* Cheerful Dot Eyes */}
-          <circle cx="40" cy="38" r="4.5" fill={strokeColor} />
-          <circle cx="38.5" cy="36.5" r="1.6" fill="#FFFFFF" />
-
-          <circle cx="60" cy="38" r="4.5" fill={strokeColor} />
-          <circle cx="58.5" cy="36.5" r="1.6" fill="#FFFFFF" />
-
-          {/* Exaggerated Open Laughing Beak (Wide open happy mouth!) */}
-          <path
-            d="M38 46 L62 46 L50 64 Z"
-            fill="#FFB800"
-            stroke={strokeColor}
-            strokeWidth="3.5"
-            strokeLinejoin="round"
-          />
-          {/* Happy smile crease */}
-          <path
-            d="M44 52 Q50 58 56 52"
-            stroke="#92400E"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          />
-        </svg>
-      );
-
-    case 'King':
-      // 5. 킹 펭귄: 화려한 손그림 황금 볏/왕관 깃털, 위엄 있으면서도 우스꽝스러운 일자 눈썹과 점눈, 당당한 포즈
-      return (
-        <svg
-          viewBox="0 0 100 100"
-          width={size}
-          height={size}
-          className={className}
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          {/* Royal Feet */}
-          <path
-            d="M28 84 C22 88, 20 94, 30 94 C38 94, 40 88, 36 84 Z"
-            fill="#FFB800"
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M64 84 C60 88, 62 94, 72 94 C80 94, 80 88, 74 84 Z"
-            fill="#FFB800"
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-
-          {/* Wild Spiky Yellow Crown Crest (Marker-drawn spikes!) */}
-          <path
-            d="M30 26 L34 8 L46 20 L58 4 L68 18 L76 8 L74 28 Z"
-            fill="#FFD600"
-            stroke={strokeColor}
-            strokeWidth="4.5"
-            strokeLinejoin="round"
-          />
-
-          {/* Round Majestic Body */}
-          <path
-            d="M50 22 C28 22, 18 40, 18 64 C18 80, 28 88, 50 88 C72 88, 82 80, 82 64 C82 40, 72 22, 50 22 Z"
-            fill={bodyColor}
-            stroke={strokeColor}
-            strokeWidth="4.5"
-            strokeLinejoin="round"
-          />
-
-          {/* White Belly */}
-          <path
-            d="M50 38 C38 38, 30 50, 30 68 C30 78, 38 84, 50 84 C62 84, 70 78, 70 68 C70 50, 62 38, 50 38 Z"
-            fill="#FFFFFF"
-            stroke={strokeColor}
-            strokeWidth="3.5"
-            strokeLinejoin="round"
-          />
-
-          {/* Proud Royal Flippers on Hips */}
-          <path
-            d="M19 50 C12 56, 12 66, 22 66 C24 66, 24 58, 22 52 Z"
-            fill={bodyColor}
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-          <path
-            d="M81 50 C88 56, 88 66, 78 66 C76 66, 76 58, 78 52 Z"
-            fill={bodyColor}
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-
-          {/* Fierce / Comical Stern Eyebrows & Eyes */}
-          <path
-            d="M36 40 L48 44"
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinecap="round"
-          />
-          <circle cx="44" cy="48" r="4.2" fill={strokeColor} />
-          <circle cx="42.5" cy="46.5" r="1.5" fill="#FFFFFF" />
-
-          <path
-            d="M64 40 L52 44"
-            stroke={strokeColor}
-            strokeWidth="4"
-            strokeLinecap="round"
-          />
-          <circle cx="56" cy="48" r="4.2" fill={strokeColor} />
-          <circle cx="54.5" cy="46.5" r="1.5" fill="#FFFFFF" />
-
-          {/* Grand Yellow Beak */}
-          <path
-            d="M44 52 Q50 64 56 52 Q50 54 44 52 Z"
-            fill="#FFB800"
-            stroke={strokeColor}
-            strokeWidth="3.5"
-            strokeLinejoin="round"
-          />
-        </svg>
-      );
-  }
+      {/* snowball cue for the ranged penguin */}
+      {unitId === 'Shooter' && (
+        <circle cx="80" cy="62" r="10" fill="#FFFFFF" stroke={visual.outline} strokeWidth="3" />
+      )}
+    </svg>
+  );
 };
