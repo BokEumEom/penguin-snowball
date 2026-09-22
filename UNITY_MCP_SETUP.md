@@ -1,6 +1,6 @@
 # Unity MCP setup for Penguin Snowball
 
-This repository keeps the existing web prototype and a Unity migration source set under `UnityProject/`.
+This repository keeps the existing web prototype and a runnable Unity migration source set under `UnityProject/`. The Unity Editor bootstrap generates the reference-matched Title and Battle scenes plus unit prefabs/animators from committed hand-drawn sprite sources.
 
 ## Recommended stack
 
@@ -60,7 +60,7 @@ For any Penguin Snowball scene/UI/animation/gameplay task, read the project skil
 
 Use a **Universal 2D** project and target WebGL.
 
-If `UnityProject/` is being used only as a source folder, create a clean Universal 2D project first and copy the committed `Assets/Scripts` tree into it.
+Open `UnityProject/` with Unity 6.3.24f1. After scripts compile, run **Tools > Penguin Snowball > Bootstrap Reference Scenes**. This decodes the committed art, creates prefabs and animations, wires Title/Battle scenes, and adds them to Build Settings.
 
 Recommended project shape:
 
