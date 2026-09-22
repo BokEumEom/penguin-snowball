@@ -8,9 +8,25 @@ interface PortraitProps {
   isEnemy?: boolean;
 }
 
-const OUTLINE = '#1A1A1A';
-const BELLY = '#FFFFFF';
-const BEAK = '#FFB800';
+const OUTLINE = '#171717';
+const WHITE = '#FFFFFF';
+const YELLOW = '#FFC400';
+
+const bodyPath: Record<UnitId, string> = {
+  Small: 'M48 14 C31 12 20 27 18 49 C16 68 22 82 39 88 C57 93 77 85 82 66 C87 47 77 23 61 17 C56 15 53 14 48 14 Z',
+  Speed: 'M57 15 C41 11 26 24 21 45 C17 61 21 76 35 83 C50 91 69 84 78 69 C87 54 84 34 73 22 C68 18 63 16 57 15 Z',
+  Shooter: 'M49 10 C36 10 27 23 25 43 C23 64 27 80 40 87 C54 94 69 86 74 69 C79 51 75 27 63 16 C59 12 54 10 49 10 Z',
+  Tank: 'M47 14 C25 12 11 28 10 51 C9 71 18 84 36 89 C58 95 82 85 89 67 C96 48 87 27 69 19 C61 16 54 14 47 14 Z',
+  King: 'M48 18 C29 15 16 31 15 52 C14 71 23 84 40 89 C59 94 80 85 86 68 C92 49 83 30 67 22 C60 19 54 18 48 18 Z',
+};
+
+const bellyPath: Record<UnitId, string> = {
+  Small: 'M50 33 C39 32 30 44 29 59 C28 73 34 81 46 83 C60 86 72 77 72 63 C72 48 63 35 50 33 Z',
+  Speed: 'M56 34 C46 33 38 43 37 57 C36 70 42 79 53 81 C64 83 73 75 73 61 C73 47 66 36 56 34 Z',
+  Shooter: 'M52 29 C43 29 35 40 34 56 C33 71 38 80 48 83 C59 86 68 77 69 62 C70 46 62 31 52 29 Z',
+  Tank: 'M50 34 C35 32 24 44 23 59 C21 74 29 82 43 84 C60 87 76 79 78 65 C80 50 67 36 50 34 Z',
+  King: 'M50 37 C38 35 28 45 27 59 C25 73 32 81 45 84 C59 87 72 79 74 65 C76 51 64 39 50 37 Z',
+};
 
 export const PenguinPortrait: React.FC<PortraitProps> = ({
   unitId,
@@ -18,7 +34,8 @@ export const PenguinPortrait: React.FC<PortraitProps> = ({
   className = '',
   isEnemy = false,
 }) => {
-  const body = isEnemy ? '#EF5A59' : '#18B7D6';
+  const body = isEnemy ? '#F05A5A' : '#16B8D4';
+  const accent = isEnemy ? '#F58A8A' : '#68D4E6';
 
   return (
     <svg
@@ -30,135 +47,106 @@ export const PenguinPortrait: React.FC<PortraitProps> = ({
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
-      {/* very light ground mark — no glossy/vector shading */}
-      <ellipse cx="50" cy="89" rx={unitId === 'Tank' ? 27 : 23} ry="4.5" fill="#DDD7C7" opacity="0.75" />
+      <ellipse cx="50" cy="90" rx={unitId === 'Tank' ? 29 : 24} ry="4.5" fill="#D9D2BF" />
 
-      {/* feet */}
-      <path d="M29 82 C25 87 27 92 38 91 C43 90 43 85 38 82 Z" fill={BEAK} stroke={OUTLINE} strokeWidth="4" strokeLinejoin="round" />
-      <path d="M58 82 C55 87 57 92 68 91 C73 90 73 85 68 82 Z" fill={BEAK} stroke={OUTLINE} strokeWidth="4" strokeLinejoin="round" />
-
-      {/* silhouette accents */}
-      {unitId === 'Speed' && (
-        <path d="M42 19 C31 9 20 13 12 20 C23 21 31 25 39 30 Z" fill={body} stroke={OUTLINE} strokeWidth="4.5" strokeLinejoin="round" />
-      )}
       {unitId === 'King' && (
-        <path d="M30 28 L34 9 L45 22 L56 5 L65 20 L76 10 L72 30 Z" fill="#FFD600" stroke={OUTLINE} strokeWidth="4.5" strokeLinejoin="round" />
+        <path
+          d="M29 30 L33 10 L44 23 L55 5 L65 21 L76 10 L72 31"
+          fill="#FFD51A"
+          stroke={OUTLINE}
+          strokeWidth="4.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       )}
 
-      {/* body: one flat team color, deliberately simple */}
+      {unitId === 'Speed' && (
+        <path
+          d="M42 22 C31 10 19 13 10 20 C22 22 31 27 39 32"
+          fill={body}
+          stroke={OUTLINE}
+          strokeWidth="4.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
+
       <path
-        d={
-          unitId === 'Shooter'
-            ? 'M50 11 C34 11 26 29 26 57 C26 79 35 87 50 87 C65 87 74 79 74 57 C74 29 66 11 50 11 Z'
-            : unitId === 'Tank'
-            ? 'M50 15 C23 15 12 37 13 63 C14 82 27 88 50 88 C73 88 86 82 87 63 C88 37 77 15 50 15 Z'
-            : unitId === 'Speed'
-            ? 'M57 16 C38 14 26 31 23 56 C21 75 33 85 52 85 C73 85 82 71 81 52 C79 31 72 18 57 16 Z'
-            : 'M50 15 C29 15 18 35 18 60 C18 79 29 87 50 87 C71 87 82 79 82 60 C82 35 71 15 50 15 Z'
-        }
+        d={unitId === 'Tank'
+          ? 'M18 50 C6 54 3 65 10 73 C14 78 19 69 22 58'
+          : 'M22 49 C11 52 9 61 14 69 C18 74 22 66 24 57'}
         fill={body}
         stroke={OUTLINE}
-        strokeWidth="5"
+        strokeWidth="4.6"
+        strokeLinecap="round"
         strokeLinejoin="round"
       />
 
-      {/* white belly — large, flat, graphic */}
-      <path
-        d={
-          unitId === 'Shooter'
-            ? 'M51 30 C41 30 34 43 34 64 C34 77 41 82 51 82 C61 82 68 76 68 62 C68 43 61 30 51 30 Z'
-            : unitId === 'Tank'
-            ? 'M51 34 C33 34 24 49 24 67 C24 79 34 83 51 83 C68 83 77 79 77 67 C77 49 69 34 51 34 Z'
-            : 'M52 34 C39 34 31 48 31 66 C31 78 39 82 51 82 C63 82 71 77 71 64 C71 48 64 34 52 34 Z'
-        }
-        fill={BELLY}
-        stroke={OUTLINE}
-        strokeWidth="3.5"
-        strokeLinejoin="round"
-      />
+      <path d={bodyPath[unitId]} fill={body} stroke={OUTLINE} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
 
-      {/* left flipper */}
+      <path d={bellyPath[unitId]} fill={WHITE} stroke={OUTLINE} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+
       <path
-        d={unitId === 'Tank' ? 'M15 50 C5 54 4 65 10 72 C14 76 19 67 21 57 Z' : 'M20 49 C11 53 10 63 15 69 C19 72 22 65 23 57 Z'}
+        d={unitId === 'Speed'
+          ? 'M77 47 C90 49 96 57 96 66 C88 65 82 61 76 55'
+          : unitId === 'Tank'
+          ? 'M85 48 C96 52 97 63 91 71 C86 77 81 68 79 57'
+          : unitId === 'King'
+          ? 'M80 50 C89 54 90 63 84 69 C79 71 76 63 77 56'
+          : 'M79 49 C89 52 91 61 86 68 C82 72 78 65 77 57'}
         fill={body}
         stroke={OUTLINE}
-        strokeWidth="4"
+        strokeWidth="4.6"
+        strokeLinecap="round"
         strokeLinejoin="round"
       />
 
-      {/* right flipper / unit personality */}
-      <path
-        d={
-          unitId === 'Speed'
-            ? 'M78 49 C89 50 95 58 96 67 C88 66 82 62 76 56 Z'
-            : unitId === 'Tank'
-            ? 'M85 50 C95 54 96 65 90 72 C86 76 81 67 79 57 Z'
-            : unitId === 'King'
-            ? 'M80 51 C88 55 89 65 82 69 C77 69 76 62 77 56 Z'
-            : 'M80 49 C89 53 90 63 85 69 C81 72 78 65 77 57 Z'
-        }
-        fill={body}
-        stroke={OUTLINE}
-        strokeWidth="4"
-        strokeLinejoin="round"
-      />
-
-      {/* face is intentionally primitive: dots/lines, no blush or realistic mask */}
       {unitId === 'Shooter' ? (
         <>
-          <path d="M38 36 Q44 31 50 36" stroke={OUTLINE} strokeWidth="4" strokeLinecap="round" />
-          <path d="M55 36 Q61 31 67 36" stroke={OUTLINE} strokeWidth="4" strokeLinecap="round" />
+          <path d="M38 35 Q44 31 50 35" stroke={OUTLINE} strokeWidth="4" strokeLinecap="round" />
+          <path d="M55 35 Q61 31 67 35" stroke={OUTLINE} strokeWidth="4" strokeLinecap="round" />
         </>
       ) : (
         <>
-          {unitId === 'Speed' && <path d="M41 33 L52 37" stroke={OUTLINE} strokeWidth="3.5" strokeLinecap="round" />}
+          {unitId === 'Speed' && <path d="M42 32 L52 36" stroke={OUTLINE} strokeWidth="3.6" strokeLinecap="round" />}
           {unitId === 'King' && (
             <>
-              <path d="M36 41 L47 45" stroke={OUTLINE} strokeWidth="4" strokeLinecap="round" />
-              <path d="M64 41 L53 45" stroke={OUTLINE} strokeWidth="4" strokeLinecap="round" />
+              <path d="M36 42 L47 46" stroke={OUTLINE} strokeWidth="4" strokeLinecap="round" />
+              <path d="M64 42 L53 46" stroke={OUTLINE} strokeWidth="4" strokeLinecap="round" />
             </>
           )}
-          <circle cx={unitId === 'Speed' ? 51 : 43} cy={unitId === 'King' ? 49 : 42} r="4.6" fill={OUTLINE} />
-          <circle cx={unitId === 'Speed' ? 69 : 59} cy={unitId === 'King' ? 49 : 42} r="4.6" fill={OUTLINE} />
+          <circle cx={unitId === 'Speed' ? 52 : 43} cy={unitId === 'King' ? 50 : 42} r="4.2" fill={OUTLINE} />
+          <circle cx={unitId === 'Speed' ? 68 : 59} cy={unitId === 'King' ? 50 : 42} r="4.2" fill={OUTLINE} />
         </>
       )}
 
-      {/* yellow beak */}
       <path
-        d={
-          unitId === 'Speed'
-            ? 'M52 48 L78 52 L52 59 Z'
-            : unitId === 'Shooter'
-            ? 'M48 45 L74 48 L48 54 Z'
-            : unitId === 'Tank'
-            ? 'M38 48 L63 48 L50 63 Z'
-            : unitId === 'King'
-            ? 'M43 55 Q50 65 57 55 Q50 57 43 55 Z'
-            : 'M43 48 Q50 57 57 48 Q50 50 43 48 Z'
-        }
-        fill={BEAK}
+        d={unitId === 'Speed'
+          ? 'M52 47 L78 51 L52 58'
+          : unitId === 'Shooter'
+          ? 'M48 44 L75 48 L48 54'
+          : unitId === 'Tank'
+          ? 'M39 47 L63 48 L50 63'
+          : unitId === 'King'
+          ? 'M43 54 Q50 64 58 54 Q50 57 43 54'
+          : 'M43 47 Q50 56 57 47 Q50 50 43 47'}
+        fill={YELLOW}
         stroke={OUTLINE}
-        strokeWidth="3.5"
+        strokeWidth="3.6"
+        strokeLinecap="round"
         strokeLinejoin="round"
       />
 
-      {/* shooter only: simple snowball prop like the in-game doodle */}
+      <path d="M31 84 C26 87 27 92 38 92 C43 91 43 86 38 83" fill={YELLOW} stroke={OUTLINE} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M59 84 C55 88 57 92 68 92 C73 91 73 86 68 83" fill={YELLOW} stroke={OUTLINE} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+
       {unitId === 'Shooter' && (
-        <circle cx="79" cy="63" r="11" fill="#FFFFFF" stroke={OUTLINE} strokeWidth="3.5" />
+        <circle cx="80" cy="63" r="10.5" fill={WHITE} stroke={OUTLINE} strokeWidth="3.5" />
       )}
 
-      {/* second imperfect contour pass: subtle wobble instead of glossy rendering */}
-      <path
-        d={
-          unitId === 'Tank'
-            ? 'M25 25 C18 34 16 47 17 61 M78 29 C83 40 84 53 82 66'
-            : 'M28 27 C23 37 22 49 22 59 M74 30 C79 40 79 53 77 64'
-        }
-        stroke="#000000"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        opacity="0.18"
-      />
+      {/* tiny misregistered accent strokes make it feel drawn, not polished vector */}
+      <path d="M25 37 C20 48 20 59 23 69" stroke={accent} strokeWidth="1.6" strokeLinecap="round" opacity="0.6" />
+      <path d="M72 29 C79 39 82 50 80 61" stroke="#000000" strokeWidth="1.3" strokeLinecap="round" opacity="0.18" />
     </svg>
   );
 };
