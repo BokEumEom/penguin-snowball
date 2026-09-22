@@ -68,7 +68,7 @@ export default function App() {
   };
 
   return (
-    <main className="w-screen h-screen overflow-hidden bg-slate-950 flex flex-col items-center justify-center">
+    <main className="w-screen h-[100dvh] min-h-[100dvh] overflow-hidden bg-slate-950 flex flex-col items-center justify-center">
       {/* Title Phase */}
       {phase === 'title' && (
         <TitleScreen
