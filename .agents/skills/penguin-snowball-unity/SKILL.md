@@ -36,13 +36,15 @@ For final visuals:
 Use two scenes:
 
 ### Title
-- Paper/cream snow background.
-- Large hand-drawn Korean title.
-- Penguin group art is the visual focus.
-- One primary Start button.
-- Difficulty and match time are small secondary controls.
-- Settings is a small icon/button.
-- No large dashboard cards, unit encyclopedia, marketing copy, feature cards, or deep shadows.
+- Paper/cream background with intentionally large empty space.
+- Large hand-drawn Korean title at top center with small Latin subtitle below.
+- A single blue-flag igloo is the central/lower hero image.
+- There is **no separate Start button**.
+- Bottom difficulty choices (Easy / Normal / Hard) are the start actions: choosing one immediately enters Battle.
+- Match time is a separate right-side selector: previous arrow / value / next arrow.
+- Settings is only a small gear icon in the top-right.
+- Version text sits unobtrusively in the bottom-left.
+- No penguin group hero art, dashboard cards, unit encyclopedia, marketing copy, feature cards, or deep shadows.
 
 ### Battle
 - Orthographic 2D camera.
@@ -122,7 +124,7 @@ After meaningful visual/gameplay changes:
 A change is not done if:
 - the game still looks like a generic web/mobile app;
 - penguins are generated from code shapes instead of final sprites;
-- title screen uses dashboard/card composition;
+- title screen uses dashboard/card composition or adds a separate Start button;
 - cheer still boosts cost instead of snowball production;
 - mobile placement cannot be completed with taps;
 - the Unity WebGL build has not been checked.
